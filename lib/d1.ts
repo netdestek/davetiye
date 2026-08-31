@@ -108,20 +108,7 @@ async function ensureActivationSchema(db: D1Database) {
     }
   }
 
-  await db.batch([
-    db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_activation_code ON invitations(activation_code_id)'),
-    db.prepare(`CREATE TRIGGER IF NOT EXISTS trg_redeem_activation_code
-      AFTER INSERT ON invitations
-      WHEN NEW.activation_code_id IS NOT NULL
-      BEGIN
-        UPDATE activation_codes
-        SET status = 'used', used_at = unixepoch(), used_by_user_id = NEW.owner_user_id,
-          invitation_id = NEW.id
-        WHERE id = NEW.activation_code_id AND status = 'unused'
-          AND used_at IS NULL AND invitation_id IS NULL;
-        SELECT CASE WHEN changes() <> 1 THEN RAISE(ABORT, 'ACTIVATION_CODE_UNAVAILABLE') END;
-      END`),
-  ]);
+  await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_activation_code ON invitations(activation_code_id)').run();
 }
 
 export async function hashPublicToken(token: string) {

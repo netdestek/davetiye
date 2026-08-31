@@ -119,18 +119,26 @@ export async function POST(request: Request) {
       env.DB.prepare(`INSERT INTO app_users (id, email, display_name)
       VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET email = excluded.email,
       display_name = excluded.display_name`).bind(user.userId, email, user.displayName),
+      // D1 batches are transactional. Reserving the code first means that only one
+      // concurrent request can reach the invitation insert; a later statement failure
+      // rolls this update back together with the rest of the batch.
+      env.DB.prepare(`UPDATE activation_codes
+        SET status = 'used', used_at = unixepoch(), used_by_user_id = ?, invitation_id = ?
+        WHERE id = ? AND status = 'unused' AND used_at IS NULL AND invitation_id IS NULL
+          AND EXISTS (
+            SELECT 1 FROM activation_sessions
+            WHERE id = ? AND code_id = activation_codes.id AND owner_user_id = ? AND token_hash = ?
+              AND status = 'active' AND expires_at > unixepoch()
+          )`).bind(user.userId, invitationId, user.codeId, user.id, user.userId, user.tokenHash),
       env.DB.prepare(`INSERT INTO invitations (
       id, owner_user_id, title, host_names, event_at, venue_name, venue_address,
       map_url, description, video_key, poster_key, public_token_hash, activation_code_id, status
     ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, id, 'published'
-      FROM activation_codes WHERE id = ? AND status = 'unused' AND EXISTS (
-        SELECT 1 FROM activation_sessions
-        WHERE id = ? AND code_id = activation_codes.id AND owner_user_id = ? AND token_hash = ?
-          AND status = 'active' AND expires_at > unixepoch()
-      )`).bind(
-      invitationId, user.userId, 'Özel davet', hostNames, eventAt,
-      venueName, venueAddress || null, mapUrl, description || null, videoKey,
-      posterKey || null, tokenHash, user.codeId, user.id, user.userId, user.tokenHash,
+      FROM activation_codes
+      WHERE id = ? AND status = 'used' AND invitation_id = ? AND used_by_user_id = ?`).bind(
+        invitationId, user.userId, 'Özel davet', hostNames, eventAt,
+        venueName, venueAddress || null, mapUrl, description || null, videoKey,
+        posterKey || null, tokenHash, user.codeId, invitationId, user.userId,
       ),
       env.DB.prepare(`UPDATE activation_sessions SET
         status = CASE WHEN id = ? THEN 'redeemed' ELSE 'revoked' END,
@@ -156,7 +164,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Davetiye kaydedilemedi. Aktivasyon kodunuz kullanılmadı; tekrar deneyin.' }, { status: 503 });
   }
 
-  if (!results[1]?.meta.changes) {
+  if (!results[1]?.meta.changes || !results[2]?.meta.changes) {
     const current = await env.DB.prepare(`SELECT status FROM activation_codes WHERE id = ? LIMIT 1`)
       .bind(user.codeId).first<{ status: 'unused' | 'used' }>();
     const error = current?.status === 'used'
