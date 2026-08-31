@@ -1,12 +1,13 @@
 import {
-  BarChart3, CheckCircle2, ChevronDown, CircleDollarSign, Clock3, Eye,
+  BarChart3, CheckCircle2, ChevronDown, CircleDollarSign, Clock3,
   Film, Heart, LayoutDashboard, LayoutTemplate, MoreHorizontal, Search,
   Settings, ShieldCheck, Sparkles, TicketPercent, TrendingUp, UserRound,
-  Users, XCircle,
+  Users,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ActivationCodeIssuer } from '@/components/activation-code-issuer';
 
 const users = [
   { name: 'Elif Aydın', email: 'elif@ornek.com', plan: 'Plus', invites: 2, status: 'Aktif', joined: '28 Ağu 2026' },
@@ -16,9 +17,9 @@ const users = [
 ];
 
 const jobs = [
-  { title: 'Elif & Arda', type: '1080p · 42 sn', status: 'Hazır', progress: 100, tone: 'bg-[#2e7a65]' },
-  { title: 'Mina’nın 1. Yaşı', type: '1080p · 28 sn', status: 'İşleniyor', progress: 68, tone: 'bg-[#bd7a37]' },
-  { title: 'Nova Açılış', type: '720p · 36 sn', status: 'Bekliyor', progress: 12, tone: 'bg-[#7a6b96]' },
+  { title: 'Elif & Arda', type: '1080p · 42 sn', status: 'Sunuluyor', progress: 100, tone: 'bg-[#2e7a65]' },
+  { title: 'Mina’nın 1. Yaşı', type: '1080p · 28 sn', status: 'Yükleniyor', progress: 68, tone: 'bg-[#bd7a37]' },
+  { title: 'Nova Açılış', type: '720p · 36 sn', status: 'Yükleme bekliyor', progress: 12, tone: 'bg-[#7a6b96]' },
 ];
 
 const nav = [
@@ -26,7 +27,7 @@ const nav = [
   { label: 'Kullanıcılar', icon: Users },
   { label: 'Davetiyeler', icon: Heart },
   { label: 'Şablonlar', icon: LayoutTemplate },
-  { label: 'Video işleri', icon: Film, badge: '3' },
+  { label: 'Video yüklemeleri', icon: Film, badge: '3' },
   { label: 'Siparişler', icon: CircleDollarSign },
   { label: 'Kampanyalar', icon: TicketPercent },
 ];
@@ -55,21 +56,23 @@ export default function AdminPage() {
           <AdminMetric label="Toplam kullanıcı" value="2.842" note="bu ay +184" icon={Users} tone="bg-[#e6eff7] text-[#3d6d96]" />
           <AdminMetric label="Yayındaki davetiye" value="1.126" note="bugün +23" icon={Heart} tone="bg-[#f6e7ea] text-[#a0495b]" />
           <AdminMetric label="Aylık gelir" value="₺184,6K" note="geçen aya göre %12" icon={CircleDollarSign} tone="bg-[#e3f1eb] text-[#2d735f]" />
-          <AdminMetric label="Video kuyruğu" value="3" note="ortalama 1 dk 42 sn" icon={Film} tone="bg-[#f6ecdd] text-[#9a6733]" />
+          <AdminMetric label="Saklanan video" value="1.126" note="bugün +23 yükleme" icon={Film} tone="bg-[#f6ecdd] text-[#9a6733]" />
         </div>
+
+        <ActivationCodeIssuer />
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(330px,.72fr)]">
           <section className="rounded-2xl border border-[#e1e5e8] bg-white p-5 shadow-[0_8px_28px_rgba(27,37,34,.04)]">
             <div className="flex items-start justify-between"><div><h2 className="text-sm font-bold">Platform büyümesi</h2><p className="mt-1 text-[11px] text-[#7c8589]">Son 7 günde yeni davetiye ve yanıtlar</p></div><Badge variant="outline" className="text-[9px]">Son 7 gün</Badge></div>
             <div className="mt-6 flex h-[170px] items-end gap-3 border-b border-[#e5e8ea] px-2">
-              {[42, 56, 48, 72, 64, 83, 92].map((height, index) => <div key={height} className="flex h-full flex-1 items-end justify-center gap-1"><div className="w-[38%] rounded-t bg-[#b76372]" style={{ height: `${height}%` }} /><div className="w-[38%] rounded-t bg-[#cadbd5]" style={{ height: `${Math.max(24, height - 18)}%` }} /></div>)}
+              {[42, 56, 48, 72, 64, 83, 92].map((height) => <div key={height} className="flex h-full flex-1 items-end justify-center gap-1"><div className="w-[38%] rounded-t bg-[#b76372]" style={{ height: `${height}%` }} /><div className="w-[38%] rounded-t bg-[#cadbd5]" style={{ height: `${Math.max(24, height - 18)}%` }} /></div>)}
             </div>
             <div className="mt-2 grid grid-cols-7 text-center text-[9px] text-[#899195]">{['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map((day) => <span key={day}>{day}</span>)}</div>
             <div className="mt-5 flex gap-5 text-[10px] text-[#687175]"><span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-[#b76372]" /> Yeni davetiye</span><span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-[#cadbd5]" /> RSVP yanıtı</span><span className="ml-auto flex items-center gap-1 text-[#2e765f]"><TrendingUp className="size-3" /> %18 büyüme</span></div>
           </section>
 
           <section className="rounded-2xl border border-[#e1e5e8] bg-white p-5 shadow-[0_8px_28px_rgba(27,37,34,.04)]">
-            <div className="flex items-start justify-between"><div><h2 className="text-sm font-bold">Video işleme</h2><p className="mt-1 text-[11px] text-[#7c8589]">Aktif kuyruğun son durumu</p></div><a href="#" className="text-[10px] font-semibold text-[#a24b5b]">Tümünü gör</a></div>
+            <div className="flex items-start justify-between"><div><h2 className="text-sm font-bold">Video yükleme ve sunum</h2><p className="mt-1 text-[11px] text-[#7c8589]">Hazır videoların depolama ve yayın durumu</p></div><a href="#" className="text-[10px] font-semibold text-[#a24b5b]">Tümünü gör</a></div>
             <div className="mt-5 space-y-5">{jobs.map((job) => <div key={job.title}><div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#f0f2f3] text-[#53615d]"><Film className="size-4" /></span><div className="min-w-0 flex-1"><div className="flex justify-between gap-2"><p className="truncate text-xs font-semibold">{job.title}</p><span className="text-[9px] font-semibold text-[#6b7477]">{job.status}</span></div><p className="mt-0.5 text-[9px] text-[#92999c]">{job.type}</p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#edf0f1]"><div className={`h-full rounded-full ${job.tone}`} style={{ width: `${job.progress}%` }} /></div></div></div></div>)}</div>
           </section>
         </div>

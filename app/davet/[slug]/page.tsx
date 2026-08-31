@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CalendarDays, Heart, MapPin, Navigation, Play, Volume2 } from 'lucide-react';
+import { CalendarDays, Heart, MapPin, Navigation } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 import { RsvpForm } from '@/components/rsvp-form';
@@ -46,16 +46,29 @@ export default async function InvitationPage({ params }: PageProps) {
       <section className="relative z-10 mx-auto max-w-[780px] px-4 pb-16 sm:px-6">
         <div className="overflow-hidden rounded-[28px] bg-[#412f35] shadow-[0_28px_80px_rgba(65,42,43,.19)]">
           <div className="relative aspect-[16/10] min-h-[270px] overflow-hidden sm:aspect-[16/9]">
-            <img src="/og.png" alt="Davetly dijital davetiye ön izlemesi" className="absolute inset-0 size-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2d2025]/75 via-[#2d2025]/15 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-9">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{invitation.title}</p>
-              <h1 className="mt-2 font-heading text-[37px] font-medium italic leading-none tracking-[-0.035em] sm:text-[52px]">{invitation.hostNames}</h1>
-            </div>
-            <button aria-label="Davetiye videosunu oynat" className="absolute left-1/2 top-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-white/18 text-white shadow-2xl backdrop-blur-md transition hover:scale-105 hover:bg-white/25">
-              <Play className="ml-1 size-6 fill-white" />
-            </button>
-            <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-black/25 px-3 py-1.5 text-[10px] font-medium text-white backdrop-blur"><Volume2 className="size-3" /> Ses açık</span>
+            {invitation.videoKey ? (
+              // Uploaded invitations do not currently store a captions asset.
+              // eslint-disable-next-line jsx-a11y/media-has-caption
+              <video
+                className="absolute inset-0 size-full bg-black object-contain"
+                controls
+                playsInline
+                preload="metadata"
+                poster={invitation.posterKey ? `/api/media/${encodeURIComponent(slug)}/poster` : undefined}
+              >
+                <source src={`/api/media/${encodeURIComponent(slug)}/video`} />
+                Tarayıcınız video oynatmayı desteklemiyor.
+              </video>
+            ) : (
+              <>
+                <img src="/og.png" alt="Davetly dijital davetiye ön izlemesi" className="absolute inset-0 size-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2d2025]/75 via-[#2d2025]/15 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-9">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{invitation.title}</p>
+                  <h1 className="mt-2 font-heading text-[37px] font-medium italic leading-none tracking-[-0.035em] sm:text-[52px]">{invitation.hostNames}</h1>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

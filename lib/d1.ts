@@ -9,6 +9,8 @@ export type PublicInvitation = {
   venueAddress: string;
   mapUrl: string;
   description: string;
+  videoKey: string;
+  posterKey: string;
 };
 
 export type InvitationMetrics = {
@@ -40,8 +42,35 @@ const schemaStatements = [
     title TEXT NOT NULL, host_names TEXT NOT NULL, event_at TEXT NOT NULL,
     timezone TEXT NOT NULL DEFAULT 'Europe/Istanbul', venue_name TEXT, venue_address TEXT,
     map_url TEXT, description TEXT, video_key TEXT, poster_key TEXT, audio_key TEXT,
-    public_token_hash TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'draft',
+    public_token_hash TEXT NOT NULL UNIQUE, activation_code_id TEXT UNIQUE,
+    status TEXT NOT NULL DEFAULT 'draft',
     created_at INTEGER NOT NULL DEFAULT (unixepoch()), updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  )`,
+  `CREATE TABLE IF NOT EXISTS activation_codes (
+    id TEXT PRIMARY KEY, code_hash TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'unused' CHECK(status IN ('unused','used')),
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()), used_at INTEGER,
+    order_reference TEXT, template_id TEXT, invitation_id TEXT UNIQUE,
+    used_by_user_id TEXT REFERENCES app_users(id) ON DELETE SET NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS activation_sessions (
+    id TEXT PRIMARY KEY, code_id TEXT NOT NULL REFERENCES activation_codes(id) ON DELETE CASCADE,
+    owner_user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','redeemed','expired','revoked')),
+    expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch()), redeemed_at INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS media_uploads (
+    id TEXT PRIMARY KEY, object_key TEXT NOT NULL UNIQUE,
+    owner_user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK(kind IN ('video','poster')), content_type TEXT NOT NULL,
+    expected_size INTEGER NOT NULL CHECK(expected_size > 0),
+    part_size INTEGER NOT NULL CHECK(part_size > 0),
+    expected_parts INTEGER NOT NULL CHECK(expected_parts > 0),
+    status TEXT NOT NULL DEFAULT 'initiated'
+      CHECK(status IN ('initiated','completed','attached','aborted','failed','expired','deleted')),
+    expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
   `CREATE TABLE IF NOT EXISTS guests (
     id TEXT PRIMARY KEY, invitation_id TEXT NOT NULL REFERENCES invitations(id) ON DELETE CASCADE,
@@ -57,11 +86,43 @@ const schemaStatements = [
     updated_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
   'CREATE INDEX IF NOT EXISTS idx_invitations_owner_updated ON invitations(owner_user_id, updated_at DESC)',
+  'CREATE INDEX IF NOT EXISTS idx_activation_codes_status_created ON activation_codes(status, created_at DESC)',
+  'CREATE UNIQUE INDEX IF NOT EXISTS idx_activation_codes_order_reference ON activation_codes(order_reference)',
+  'CREATE INDEX IF NOT EXISTS idx_activation_sessions_code_status ON activation_sessions(code_id, status, expires_at)',
+  'CREATE INDEX IF NOT EXISTS idx_activation_sessions_owner_status ON activation_sessions(owner_user_id, status, expires_at)',
+  'CREATE INDEX IF NOT EXISTS idx_media_uploads_owner_status ON media_uploads(owner_user_id, status, created_at DESC)',
   'CREATE INDEX IF NOT EXISTS idx_guests_invitation ON guests(invitation_id)',
   'CREATE INDEX IF NOT EXISTS idx_rsvps_status ON rsvps(status)',
 ];
 
 let schemaReady = false;
+
+async function ensureActivationSchema(db: D1Database) {
+  const columns = await db.prepare('PRAGMA table_info(invitations)').all<{ name: string }>();
+  if (!columns.results.some((column) => column.name === 'activation_code_id')) {
+    try {
+      await db.prepare('ALTER TABLE invitations ADD COLUMN activation_code_id TEXT').run();
+    } catch (error) {
+      const refreshed = await db.prepare('PRAGMA table_info(invitations)').all<{ name: string }>();
+      if (!refreshed.results.some((column) => column.name === 'activation_code_id')) throw error;
+    }
+  }
+
+  await db.batch([
+    db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_activation_code ON invitations(activation_code_id)'),
+    db.prepare(`CREATE TRIGGER IF NOT EXISTS trg_redeem_activation_code
+      AFTER INSERT ON invitations
+      WHEN NEW.activation_code_id IS NOT NULL
+      BEGIN
+        UPDATE activation_codes
+        SET status = 'used', used_at = unixepoch(), used_by_user_id = NEW.owner_user_id,
+          invitation_id = NEW.id
+        WHERE id = NEW.activation_code_id AND status = 'unused'
+          AND used_at IS NULL AND invitation_id IS NULL;
+        SELECT CASE WHEN changes() <> 1 THEN RAISE(ABORT, 'ACTIVATION_CODE_UNAVAILABLE') END;
+      END`),
+  ]);
+}
 
 export async function hashPublicToken(token: string) {
   const bytes = new TextEncoder().encode(token);
@@ -78,6 +139,7 @@ export async function ensureDatabase() {
   const db = env.DB;
   if (!db) throw new Error('D1 veritabanı bağlantısı bulunamadı.');
   await db.batch(schemaStatements.map((statement) => db.prepare(statement)));
+  await ensureActivationSchema(db);
   await seedDemoInvitation();
   schemaReady = true;
 }
@@ -118,7 +180,7 @@ export async function getPublicInvitation(token: string): Promise<PublicInvitati
   await ensureDatabase();
   const tokenHash = await hashPublicToken(token);
   const row = await env.DB.prepare(`SELECT id, title, host_names, event_at, venue_name,
-      venue_address, map_url, description FROM invitations
+      venue_address, map_url, description, video_key, poster_key FROM invitations
       WHERE public_token_hash = ? AND status = 'published' LIMIT 1`)
     .bind(tokenHash).first<Record<string, string>>();
   if (!row) return null;
@@ -131,6 +193,8 @@ export async function getPublicInvitation(token: string): Promise<PublicInvitati
     venueAddress: row.venue_address ?? '',
     mapUrl: row.map_url ?? '#',
     description: row.description ?? '',
+    videoKey: row.video_key ?? '',
+    posterKey: row.poster_key ?? '',
   };
 }
 

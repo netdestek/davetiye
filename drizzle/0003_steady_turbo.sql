@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `idx_activation_codes_order_reference` ON `activation_codes` (`order_reference`);
