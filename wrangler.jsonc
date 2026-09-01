@@ -11,27 +11,27 @@
   "routes": [
     {
       "pattern": "davetiye.netdestek.net",
-      "custom_domain": true
-    }
+      "custom_domain": true,
+    },
   ],
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS",
-    "run_worker_first": false
+    "run_worker_first": false,
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "davetly-production",
       "database_id": "31b7fe4f-634d-4222-b9cf-1ddb95f06c8b",
-      "migrations_dir": "./drizzle"
-    }
+      "migrations_dir": "./drizzle",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "FILES",
-      "bucket_name": "davetly-media"
-    }
+      "bucket_name": "davetly-media",
+    },
   ],
   "ratelimits": [
     {
@@ -39,23 +39,24 @@
       "namespace_id": "72738191",
       "simple": {
         "limit": 30,
-        "period": 60
-      }
-    }
+        "period": 60,
+      },
+    },
   ],
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://davetiye.netdestek.net",
+    "GOOGLE_CLIENT_ID": "227015150700-rta0sahtgad1l5tloj9c8kc1kl20dpk7.apps.googleusercontent.com",
     "DAVETLY_ADMIN_EMAILS": "netdestek@gmail.com",
     "CF_ACCESS_TEAM_DOMAIN": "https://lingering-wood-69de.cloudflareaccess.com",
-    "CF_ACCESS_AUD": "6f22e83aa47ee7f7a478aef3e2f08573e0c041ddf94e27ff1061b0de14a83afa"
+    "CF_ACCESS_AUD": "6f22e83aa47ee7f7a478aef3e2f08573e0c041ddf94e27ff1061b0de14a83afa",
   },
   "rules": [
     {
       "type": "ESModule",
-      "globs": ["**/*.js", "**/*.mjs"]
-    }
+      "globs": ["**/*.js", "**/*.mjs"],
+    },
   ],
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

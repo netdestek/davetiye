@@ -98,8 +98,21 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
 
           <p className="mt-6 text-center text-[11px] leading-5 text-[#958984]">
-            Devam ederek hizmet koşullarını ve gizlilik politikasını kabul etmiş
-            olursunuz.
+            Devam ederek{' '}
+            <Link
+              href="/kosullar"
+              className="font-semibold text-[#75404c] underline decoration-[#75404c]/25 underline-offset-4 hover:text-primary"
+            >
+              hizmet koşullarını
+            </Link>{' '}
+            ve{' '}
+            <Link
+              href="/gizlilik"
+              className="font-semibold text-[#75404c] underline decoration-[#75404c]/25 underline-offset-4 hover:text-primary"
+            >
+              gizlilik politikasını
+            </Link>{' '}
+            kabul etmiş olursunuz.
           </p>
         </div>
       </section>
