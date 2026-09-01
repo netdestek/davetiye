@@ -79,7 +79,7 @@ export default async function AccountPage() {
             className="flex items-center gap-2.5"
             aria-label="Davetly hesabım"
           >
-            <span className="grid size-10 place-items-center rounded-[14px] bg-primary text-white shadow-[0_8px_22px_rgba(133,43,61,.18)]">
+            <span className="liquid-icon liquid-icon--brand size-10 rounded-[14px]">
               <Heart className="size-[18px] fill-current" />
             </span>
             <span className="font-heading text-[23px] font-semibold tracking-[-0.03em]">
@@ -112,6 +112,7 @@ export default async function AccountPage() {
                 type="submit"
                 variant="ghost"
                 size="icon"
+                className="liquid-icon-button size-11 rounded-[14px]"
                 aria-label="Çıkış yap"
               >
                 <LogOut />
@@ -152,19 +153,19 @@ export default async function AccountPage() {
             icon={Heart}
             label="Toplam davetiye"
             value={invitations.length}
-            tone="bg-[#f7e8e7] text-[#944353]"
+            tone="liquid-icon--rose"
           />
           <SummaryCard
             icon={CheckCircle2}
             label="Yayındaki davetiye"
             value={publishedCount}
-            tone="bg-[#e3f1eb] text-[#2d705e]"
+            tone="liquid-icon--sage"
           />
           <SummaryCard
             icon={Users}
             label="Toplam davetli"
             value={invitedCount}
-            tone="bg-[#eeeaf5] text-[#6a5a87]"
+            tone="liquid-icon--violet"
           />
         </section>
 
@@ -190,7 +191,7 @@ export default async function AccountPage() {
 
           {invitations.length === 0 ? (
             <div className="flex flex-col items-center px-5 py-16 text-center">
-              <span className="grid size-14 place-items-center rounded-2xl bg-[#f5e8e5] text-primary">
+              <span className="liquid-icon liquid-icon--gold size-14 rounded-2xl">
                 <Sparkles className="size-6" />
               </span>
               <h3 className="mt-5 font-heading text-2xl font-semibold">
@@ -224,7 +225,7 @@ export default async function AccountPage() {
                     className="group px-5 py-5 transition-colors hover:bg-[#fcf8f5] sm:px-6"
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#f4e7e3] text-primary">
+                      <span className="liquid-icon liquid-icon--rose liquid-icon--static size-12 shrink-0 rounded-2xl">
                         <Heart className="size-5" />
                       </span>
                       <div className="min-w-0 flex-1">
@@ -320,7 +321,7 @@ function SummaryCard({
   return (
     <div className="rounded-2xl border border-[#eadfd8] bg-[#fffdfa] p-5 shadow-[0_8px_28px_rgba(70,45,38,.035)]">
       <div className="flex items-center justify-between">
-        <span className={`grid size-10 place-items-center rounded-xl ${tone}`}>
+        <span className={`liquid-icon size-10 rounded-xl ${tone}`}>
           <Icon className="size-[18px]" />
         </span>
         <strong className="font-heading text-[30px] font-semibold tracking-[-0.04em]">

@@ -29,7 +29,7 @@ export default async function InvitationsPage() {
   return (
     <main className="min-h-screen bg-[#f8f4ef] text-foreground lg:pl-[226px]">
       <aside className="fixed inset-y-0 left-0 hidden w-[226px] flex-col border-r border-[#eadfd8] bg-[#fffdfa] p-5 lg:flex">
-        <a href="/" className="flex items-center gap-2.5 px-1"><span className="grid size-9 place-items-center rounded-xl bg-primary text-white"><Heart className="size-4 fill-current" /></span><span className="font-heading text-xl font-semibold">davetly</span></a>
+        <a href="/" className="flex items-center gap-2.5 px-1"><span className="liquid-icon liquid-icon--brand size-9 rounded-xl"><Heart className="size-4 fill-current" /></span><span className="font-heading text-xl font-semibold">davetly</span></a>
         <nav className="mt-9 space-y-1 text-sm">
           <a href="/" className="nav-link"><LayoutDashboard />Ana sayfa</a>
           <a href="/davetiyeler" className="flex h-11 items-center gap-3 rounded-xl bg-[#f7ebe9] px-3 font-semibold text-primary"><Heart className="size-[18px]" />Davetiyelerim</a>
@@ -40,7 +40,7 @@ export default async function InvitationsPage() {
       </aside>
 
       <header className="flex h-[72px] items-center border-b border-[#eadfd8] bg-[#fffdfa] px-4 sm:px-7">
-        <a href="/" className="mr-3 grid size-9 place-items-center rounded-xl hover:bg-muted" aria-label="Geri"><ArrowLeft className="size-4" /></a>
+        <a href="/" className="liquid-icon-button liquid-icon--neutral mr-3 size-11 rounded-[14px]" aria-label="Geri"><ArrowLeft className="size-4" /></a>
         <div><p className="text-sm font-semibold">Elif & Arda</p><p className="text-[10px] text-muted-foreground">Düğün davetiyesi</p></div>
         <Badge className="ml-3 bg-[#e2f0ea] text-[#246454]">Yayında</Badge>
         <div className="ml-auto flex items-center gap-2"><Button nativeButton={false} render={<a href="/olustur" />} variant="outline" className="hidden h-9 bg-white sm:inline-flex"><Plus /> Yeni davetiye</Button><span className="grid size-8 place-items-center rounded-full bg-[#e9d9d2] text-xs font-semibold">EA</span></div>
@@ -53,11 +53,11 @@ export default async function InvitationsPage() {
         </div>
 
         <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <Metric label="Davetli" value={metrics.invitedGuests} note="toplam kişi" tone="text-[#7f4852] bg-[#f7e9e8]" icon={Users} />
-          <Metric label="Katılacak" value={metrics.attendingGuests} note={`${metrics.expectedAttendees} toplam kişi`} tone="text-[#2b705f] bg-[#e3f1eb]" icon={Check} />
-          <Metric label="Katılamayacak" value={metrics.declinedGuests} note="yanıt verdi" tone="text-[#9b4955] bg-[#f7e7e4]" icon={X} />
-          <Metric label="Henüz net değil" value={metrics.maybeGuests} note="karar bekliyor" tone="text-[#6a5b88] bg-[#eeeaf5]" icon={HelpCircle} />
-          <Metric label="Yanıt beklenen" value={metrics.awaitingResponse} note="hatırlatılabilir" tone="text-[#7d6b5e] bg-[#f3ece5]" icon={Clock3} />
+          <Metric label="Davetli" value={metrics.invitedGuests} note="toplam kişi" tone="liquid-icon--rose" icon={Users} />
+          <Metric label="Katılacak" value={metrics.attendingGuests} note={`${metrics.expectedAttendees} toplam kişi`} tone="liquid-icon--sage" icon={Check} />
+          <Metric label="Katılamayacak" value={metrics.declinedGuests} note="yanıt verdi" tone="liquid-icon--rose" icon={X} />
+          <Metric label="Henüz net değil" value={metrics.maybeGuests} note="karar bekliyor" tone="liquid-icon--violet" icon={HelpCircle} />
+          <Metric label="Yanıt beklenen" value={metrics.awaitingResponse} note="hatırlatılabilir" tone="liquid-icon--neutral" icon={Clock3} />
         </div>
 
         <section id="guests" className="mt-6 overflow-hidden rounded-[20px] border border-[#eadfd8] bg-[#fffdfa] shadow-[0_12px_36px_rgba(70,45,38,.05)]">
@@ -67,11 +67,11 @@ export default async function InvitationsPage() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-xs">
-              <thead className="bg-[#faf6f3] text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"><tr><th className="px-5 py-3">Davetli</th><th className="px-5 py-3">Katılım</th><th className="px-5 py-3">Kişi</th><th className="px-5 py-3">Not</th><th className="px-5 py-3">Yanıt tarihi</th><th className="w-12 px-3 py-3" /></tr></thead>
+              <thead className="bg-[#faf6f3] text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"><tr><th className="px-5 py-3">Davetli</th><th className="px-5 py-3">Katılım</th><th className="px-5 py-3">Kişi</th><th className="px-5 py-3">Not</th><th className="px-5 py-3">Yanıt tarihi</th><th className="w-14 px-3 py-3" /></tr></thead>
               <tbody className="divide-y divide-[#f0e8e3]">
                 {guests.map((guest) => {
                   const presentation = statusPresentation[guest.status ?? 'awaiting'];
-                  return <tr key={guest.id} className="hover:bg-[#fcf8f5]"><td className="px-5 py-4"><div className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-full bg-[#efe1db] text-[10px] font-bold text-[#7d544b]">{initials(guest.name)}</span><span className="font-semibold">{guest.name}</span></div></td><td className="px-5 py-4"><Badge className={presentation.className}><presentation.icon className="size-3" />{presentation.label}</Badge></td><td className="px-5 py-4 font-semibold">{guest.partySize || '—'}</td><td className="max-w-[280px] truncate px-5 py-4 text-muted-foreground">{guest.note || '—'}</td><td className="px-5 py-4 text-muted-foreground">{guest.respondedAt ? new Date(guest.respondedAt * 1000).toLocaleDateString('tr-TR') : '—'}</td><td className="px-3 py-4"><button aria-label={`${guest.name} seçenekleri`} className="grid size-8 place-items-center rounded-lg hover:bg-muted"><MoreHorizontal className="size-4" /></button></td></tr>;
+                  return <tr key={guest.id} className="hover:bg-[#fcf8f5]"><td className="px-5 py-4"><div className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-full bg-[#efe1db] text-[10px] font-bold text-[#7d544b]">{initials(guest.name)}</span><span className="font-semibold">{guest.name}</span></div></td><td className="px-5 py-4"><Badge className={presentation.className}><presentation.icon className="size-3" />{presentation.label}</Badge></td><td className="px-5 py-4 font-semibold">{guest.partySize || '—'}</td><td className="max-w-[280px] truncate px-5 py-4 text-muted-foreground">{guest.note || '—'}</td><td className="px-5 py-4 text-muted-foreground">{guest.respondedAt ? new Date(guest.respondedAt * 1000).toLocaleDateString('tr-TR') : '—'}</td><td className="px-3 py-4"><button aria-label={`${guest.name} seçenekleri`} className="liquid-icon-button liquid-icon--neutral liquid-icon--static size-11 rounded-[14px]"><MoreHorizontal className="size-4" /></button></td></tr>;
                 })}
               </tbody>
             </table>
@@ -85,5 +85,5 @@ export default async function InvitationsPage() {
 function initials(name: string) { return name.split(/\s+/).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase('tr-TR')).join(''); }
 
 function Metric({ label, value, note, tone, icon: Icon }: { label: string; value: number; note: string; tone: string; icon: typeof Users }) {
-  return <div className="rounded-2xl border border-[#eadfd8] bg-[#fffdfa] p-4"><div className="flex items-center justify-between"><span className={`grid size-8 place-items-center rounded-xl ${tone}`}><Icon className="size-4" /></span><strong className="font-heading text-2xl font-semibold">{value}</strong></div><p className="mt-3 text-xs font-semibold">{label}</p><p className="mt-1 text-[10px] text-muted-foreground">{note}</p></div>;
+  return <div className="rounded-2xl border border-[#eadfd8] bg-[#fffdfa] p-4"><div className="flex items-center justify-between"><span className={`liquid-icon size-10 rounded-xl ${tone}`}><Icon className="size-4" /></span><strong className="font-heading text-2xl font-semibold">{value}</strong></div><p className="mt-3 text-xs font-semibold">{label}</p><p className="mt-1 text-[10px] text-muted-foreground">{note}</p></div>;
 }

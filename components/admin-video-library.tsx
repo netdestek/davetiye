@@ -321,7 +321,7 @@ export function AdminVideoLibrary() {
           <div className="grid min-h-32 place-items-center rounded-2xl border border-dashed border-[#dce2e0] text-xs text-[#78827f]"><span><LoaderCircle className="mr-2 inline size-4 animate-spin" />Videolar yükleniyor</span></div>
         ) : videos.length === 0 ? (
           <div className="grid min-h-36 place-items-center rounded-2xl border border-dashed border-[#dce2e0] bg-[#fbfcfc] px-5 text-center">
-            <div><Film className="mx-auto size-7 text-[#9aaba5]" /><p className="mt-2 text-xs font-semibold">Henüz video yok</p><p className="mt-1 text-[10px] text-[#828b8e]">İlk videoyu yukarıdaki alandan yüklediğinizde kullanıcılar seçmeye başlayabilir.</p></div>
+            <div><span className="liquid-icon liquid-icon--neutral mx-auto size-12 rounded-2xl"><Film className="size-5" /></span><p className="mt-3 text-xs font-semibold">Henüz video yok</p><p className="mt-1 text-[10px] text-[#828b8e]">İlk videoyu yukarıdaki alandan yüklediğinizde kullanıcılar seçmeye başlayabilir.</p></div>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -329,7 +329,7 @@ export function AdminVideoLibrary() {
               <article key={video.id} className="overflow-hidden rounded-2xl border border-[#e1e5e8] bg-white">
                 <div className="relative aspect-video bg-[#17221f]">
                   {video.status === 'draft' ? (
-                    <div className="grid h-full place-items-center text-center text-[#becbc7]"><div><PlayCircle className="mx-auto size-8" /><p className="mt-2 text-[10px]">Yükleme tamamlanmadı</p></div></div>
+                    <div className="grid h-full place-items-center text-center text-[#becbc7]"><div><span className="liquid-icon liquid-icon--on-dark mx-auto size-12 rounded-2xl"><PlayCircle className="size-6" /></span><p className="mt-3 text-[10px]">Yükleme tamamlanmadı</p></div></div>
                   ) : (
                     <video src={video.previewUrl} controls preload="metadata" playsInline className="h-full w-full object-contain">Tarayıcınız video önizlemesini desteklemiyor.</video>
                   )}

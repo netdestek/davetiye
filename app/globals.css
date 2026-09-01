@@ -129,6 +129,209 @@
   .mobile-nav { @apply flex min-h-12 flex-col items-center justify-center gap-1 text-[10px] font-medium text-[#8c817d]; }
   .mobile-nav svg { @apply size-[18px]; stroke-width: 1.8; }
   .invitation-preview { background: linear-gradient(145deg, #6e3041 0%, #3b393d 57%, #213b37 100%); }
+
+  .liquid-icon,
+  .liquid-icon-button {
+    --liquid-tint: 147 64 83;
+    --liquid-ink: #8d3d50;
+    --liquid-shadow: 108 44 60;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 82%);
+    color: var(--liquid-ink);
+    background:
+      radial-gradient(85% 72% at 22% 8%, rgb(255 255 255 / 96%) 0%, rgb(255 255 255 / 42%) 48%, transparent 76%),
+      linear-gradient(145deg, rgb(255 255 255 / 72%), rgb(var(--liquid-tint) / 24%));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 94%),
+      inset 0 -1px 0 rgb(var(--liquid-tint) / 12%),
+      0 9px 24px rgb(var(--liquid-shadow) / 15%),
+      0 1px 2px rgb(42 25 30 / 12%);
+    -webkit-backdrop-filter: blur(16px) saturate(175%);
+    backdrop-filter: blur(16px) saturate(175%);
+  }
+
+  .liquid-icon::before,
+  .liquid-icon-button::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -54% 30% 38% -30%;
+    transform: rotate(24deg);
+    border-radius: 999px;
+    background: linear-gradient(110deg, transparent 15%, rgb(255 255 255 / 80%) 52%, transparent 78%);
+    opacity: .82;
+    pointer-events: none;
+  }
+
+  .liquid-icon::after,
+  .liquid-icon-button::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 1px;
+    border-radius: inherit;
+    border: 1px solid rgb(255 255 255 / 32%);
+    box-shadow: inset 0 -5px 12px rgb(var(--liquid-tint) / 8%);
+    pointer-events: none;
+  }
+
+  .liquid-icon > svg,
+  .liquid-icon-button > svg {
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 1px 1px rgb(var(--liquid-shadow) / 18%));
+  }
+
+  .liquid-icon--brand {
+    --liquid-tint: 159 68 87;
+    --liquid-ink: #fff;
+    --liquid-shadow: 98 31 48;
+    border-color: rgb(255 255 255 / 46%);
+    background:
+      radial-gradient(90% 72% at 20% 5%, rgb(255 255 255 / 38%) 0%, transparent 58%),
+      linear-gradient(145deg, rgb(174 78 98 / 96%), rgb(105 37 55 / 94%));
+  }
+
+  .liquid-icon--rose {
+    --liquid-tint: 147 64 83;
+    --liquid-ink: #8d3d50;
+    --liquid-shadow: 108 44 60;
+  }
+
+  .liquid-icon--sage {
+    --liquid-tint: 54 133 106;
+    --liquid-ink: #286b59;
+    --liquid-shadow: 34 92 73;
+  }
+
+  .liquid-icon--sage-strong {
+    --liquid-tint: 64 146 118;
+    --liquid-ink: #fff;
+    --liquid-shadow: 28 87 67;
+    border-color: rgb(255 255 255 / 48%);
+    background:
+      radial-gradient(90% 72% at 20% 5%, rgb(255 255 255 / 38%) 0%, transparent 58%),
+      linear-gradient(145deg, rgb(62 139 113 / 94%), rgb(34 94 76 / 96%));
+  }
+
+  .liquid-icon--blue {
+    --liquid-tint: 69 121 165;
+    --liquid-ink: #35678e;
+    --liquid-shadow: 49 88 122;
+  }
+
+  .liquid-icon--gold {
+    --liquid-tint: 177 126 61;
+    --liquid-ink: #8e602b;
+    --liquid-shadow: 117 78 32;
+  }
+
+  .liquid-icon--violet {
+    --liquid-tint: 116 91 157;
+    --liquid-ink: #675282;
+    --liquid-shadow: 74 55 105;
+  }
+
+  .liquid-icon--neutral {
+    --liquid-tint: 122 111 106;
+    --liquid-ink: #655b57;
+    --liquid-shadow: 70 61 58;
+  }
+
+  .liquid-icon--on-dark {
+    --liquid-tint: 255 255 255;
+    --liquid-ink: #fff;
+    --liquid-shadow: 0 0 0;
+    border-color: rgb(255 255 255 / 32%);
+    background:
+      radial-gradient(80% 68% at 22% 8%, rgb(255 255 255 / 34%) 0%, transparent 64%),
+      linear-gradient(145deg, rgb(255 255 255 / 18%), rgb(255 255 255 / 6%));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 46%),
+      inset 0 -1px 0 rgb(255 255 255 / 8%),
+      0 10px 24px rgb(0 0 0 / 20%);
+  }
+
+  .liquid-icon-button {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+
+  .liquid-icon--static {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .liquid-icon-button:hover {
+      transform: translateY(-1px);
+      border-color: rgb(255 255 255 / 96%);
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 98%),
+        inset 0 -1px 0 rgb(var(--liquid-tint) / 14%),
+        0 12px 28px rgb(var(--liquid-shadow) / 20%);
+    }
+  }
+
+  .liquid-icon-button:active { transform: scale(.96); }
+  .liquid-icon-button:focus-visible {
+    outline: 3px solid rgb(var(--liquid-tint) / 68%);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-icon-button { transition: none; }
+  .liquid-icon-button:hover,
+  .liquid-icon-button:active { transform: none; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-icon,
+  .liquid-icon-button {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgb(250 244 242);
+  }
+
+  .liquid-icon::before,
+  .liquid-icon::after,
+  .liquid-icon-button::before,
+  .liquid-icon-button::after { display: none; }
+
+  .liquid-icon--brand { background: #873448; }
+  .liquid-icon--sage-strong { background: #2f725e; }
+  .liquid-icon--on-dark { background: #425d56; }
+}
+
+@media (prefers-contrast: more) {
+  .liquid-icon,
+  .liquid-icon-button {
+    border-color: rgb(var(--liquid-tint) / 52%);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 80%);
+  }
+}
+
+@media (forced-colors: active) {
+  .liquid-icon,
+  .liquid-icon-button {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background: Canvas;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .liquid-icon::before,
+  .liquid-icon::after,
+  .liquid-icon-button::before,
+  .liquid-icon-button::after { display: none; }
+
+  .liquid-icon-button:focus-visible { outline: 2px solid Highlight; }
 }
 
 ::selection { background: color-mix(in oklch, var(--primary) 22%, transparent); }

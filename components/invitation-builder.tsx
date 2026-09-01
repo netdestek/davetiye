@@ -255,7 +255,7 @@ export function InvitationBuilder() {
     <main className="min-h-screen bg-[#f8f4ef] text-foreground">
       <header className="flex h-[72px] items-center border-b border-[#eadfd8] bg-[#fffdfa] px-4 sm:px-7">
         <Link href="/" className="flex items-center gap-2.5" aria-label="Panele dön">
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-white"><Heart className="size-4 fill-current" /></span>
+          <span className="liquid-icon liquid-icon--brand size-9 rounded-xl"><Heart className="size-4 fill-current" /></span>
           <span className="font-heading text-[21px] font-semibold">davetly</span>
         </Link>
         <div className="ml-5 hidden h-7 w-px bg-[#eadfd8] sm:block" />
@@ -286,7 +286,7 @@ export function InvitationBuilder() {
               <li key={item.label} className={`flex items-center gap-2 ${number > 1 ? 'flex-1' : ''}`}>
                 {number > 1 && <span className={`mx-2 hidden h-px flex-1 sm:block ${complete || active ? 'bg-[#c68a94]' : 'bg-[#e7dcd6]'}`} />}
                 <button type="button" onClick={() => number <= step && setStep(number)} className="flex items-center gap-2" aria-current={active ? 'step' : undefined}>
-                  <span className={`grid size-8 place-items-center rounded-full border text-xs font-semibold transition ${active ? 'border-primary bg-primary text-white' : complete ? 'border-[#b36a78] bg-[#f6e8e9] text-primary' : 'border-[#dfd4ce] bg-white text-[#978b87]'}`}>
+                  <span className={`liquid-icon size-8 rounded-full text-xs font-semibold transition ${active ? 'liquid-icon--brand' : complete ? 'liquid-icon--rose' : 'liquid-icon--neutral opacity-75'}`}>
                     {complete ? <Check className="size-4" /> : number}
                   </span>
                   <span className={`hidden text-xs font-semibold sm:block ${active ? 'text-primary' : 'text-[#8a7e7a]'}`}>{item.label}</span>
@@ -331,7 +331,7 @@ export function InvitationBuilder() {
                   </div>
                 ) : videos.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#d9cac3] bg-white p-7 text-center">
-                    <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#f6ebe8] text-primary"><Film className="size-5" /></span>
+                    <span className="liquid-icon liquid-icon--rose mx-auto size-12 rounded-2xl"><Film className="size-5" /></span>
                     <p className="mt-3 text-sm font-semibold">Henüz seçilebilir video yok</p>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">Yönetici yeni bir video yayınladığında burada görünecek.</p>
                   </div>
@@ -349,7 +349,7 @@ export function InvitationBuilder() {
                         >
                           <span className="relative block aspect-video overflow-hidden bg-[#30282a]">
                             <video src={video.previewUrl} preload="metadata" muted playsInline className="size-full object-cover" />
-                            <span className={`absolute right-3 top-3 grid size-7 place-items-center rounded-full border ${selected ? 'border-primary bg-primary text-white' : 'border-white/60 bg-black/30 text-transparent'}`}><Check className="size-4" /></span>
+                            <span className={`liquid-icon absolute right-3 top-3 size-7 rounded-full ${selected ? 'liquid-icon--brand' : 'liquid-icon--on-dark text-transparent'}`}><Check className="size-4" /></span>
                             <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-white">Hazır video</span>
                           </span>
                           <span className="flex items-center justify-between gap-3 p-4">
@@ -412,8 +412,8 @@ export function InvitationBuilder() {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/10" />
               <div className="absolute left-1/2 top-3 h-4 w-16 -translate-x-1/2 rounded-full bg-black/65" />
-              {!selectedVideo && <div className="absolute inset-0 grid place-items-center text-center"><div><span className="mx-auto grid size-14 place-items-center rounded-full border border-white/30 bg-white/10"><Film className="size-5" /></span><p className="mt-3 text-xs font-semibold">Katalogdan video seç</p><p className="mt-1 text-[9px] text-white/60">Yönetici videoları</p></div></div>}
-              {selectedVideo && <span className="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-black/15 backdrop-blur"><Play className="ml-0.5 size-4 fill-white" /></span>}
+              {!selectedVideo && <div className="absolute inset-0 grid place-items-center text-center"><div><span className="liquid-icon liquid-icon--on-dark mx-auto size-14 rounded-full"><Film className="size-5" /></span><p className="mt-3 text-xs font-semibold">Katalogdan video seç</p><p className="mt-1 text-[9px] text-white/60">Yönetici videoları</p></div></div>}
+              {selectedVideo && <span className="liquid-icon liquid-icon--on-dark absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 rounded-full"><Play className="ml-0.5 size-4 fill-white" /></span>}
               <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/15 bg-black/25 p-3 backdrop-blur-md"><p className="font-heading text-lg italic">{hostNames || 'İsimleriniz'}</p><div className="mt-1.5 flex items-center gap-2 text-[9px] text-white/75"><MapPin className="size-3" /><span className="truncate">{venueName || 'Mekân adı'}</span></div></div>
             </div>
           </div>
@@ -473,7 +473,7 @@ function ActivationCodeGate({
       </div>
 
       <aside className="rounded-[24px] border border-[#d7e5df] bg-[#eff7f4] p-6 text-[#36594e]">
-        <span className="grid size-11 place-items-center rounded-2xl bg-white text-[#2c705d] shadow-sm"><ShieldCheck className="size-5" /></span>
+        <span className="liquid-icon liquid-icon--sage size-11 rounded-2xl"><ShieldCheck className="size-5" /></span>
         <h2 className="mt-5 font-heading text-2xl font-semibold">Tek davetiye hakkı</h2>
         <p className="mt-2 text-sm leading-6 text-[#58746b]">Kodunuz, davetiye başarıyla yayınlanana kadar kullanılmamış sayılır. Yayınlama tamamlandıktan sonra aynı kod yeniden kullanılamaz.</p>
         <div className="mt-5 border-t border-[#d5e5de] pt-4 text-xs leading-5 text-[#58746b]">PDF dosyanızdaki kodu kopyalayıp buraya yapıştırabilirsiniz; biçimi otomatik düzenlenir.</div>
@@ -487,7 +487,7 @@ function Field({ label, icon: Icon, wide, children }: { label: string; icon: Luc
 }
 
 function ReviewRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
-  return <div className="flex items-start gap-3 rounded-2xl border border-[#eadfd8] bg-white p-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#f6ebe8] text-primary"><Icon className="size-4" /></span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{label}</p><p className="mt-1 break-words text-sm font-semibold leading-5">{value}</p></div></div>;
+  return <div className="flex items-start gap-3 rounded-2xl border border-[#eadfd8] bg-white p-4"><span className="liquid-icon liquid-icon--rose size-9 shrink-0 rounded-xl"><Icon className="size-4" /></span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{label}</p><p className="mt-1 break-words text-sm font-semibold leading-5">{value}</p></div></div>;
 }
 
 function formatBytes(bytes: number) {

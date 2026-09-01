@@ -44,7 +44,7 @@ export default async function InvitationPage({ params }: PageProps) {
 
       <header className="relative z-10 flex h-16 items-center justify-center">
         <a href="/" className="flex items-center gap-2" aria-label="Davetly">
-          <span className="grid size-8 place-items-center rounded-xl bg-primary text-white"><Heart className="size-3.5 fill-current" /></span>
+          <span className="liquid-icon liquid-icon--brand size-8 rounded-xl"><Heart className="size-3.5 fill-current" /></span>
           <span className="font-heading text-xl font-semibold">davetly</span>
         </a>
       </header>
@@ -83,11 +83,11 @@ export default async function InvitationPage({ params }: PageProps) {
           <div className="mx-auto my-6 h-px w-16 bg-[#d7b8ab]" />
           <div className="grid gap-3 text-left sm:grid-cols-2">
             <div className="flex items-start gap-3 rounded-2xl bg-[#faf5f1] p-4">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#f1dfdc] text-primary"><CalendarDays className="size-4" /></span>
+              <span className="liquid-icon liquid-icon--rose size-9 shrink-0 rounded-xl"><CalendarDays className="size-4" /></span>
               <div><p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Tarih & saat</p><p className="mt-1 text-[13px] font-semibold capitalize">{dateLabel}</p><p className="text-xs text-muted-foreground">Saat {timeLabel}</p></div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-[#faf5f1] p-4">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e3ece8] text-[#2e6557]"><MapPin className="size-4" /></span>
+              <span className="liquid-icon liquid-icon--sage size-9 shrink-0 rounded-xl"><MapPin className="size-4" /></span>
               <div><p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Mekân</p><p className="mt-1 text-[13px] font-semibold">{invitation.venueName}</p><p className="text-xs text-muted-foreground">{invitation.venueAddress}</p></div>
             </div>
           </div>

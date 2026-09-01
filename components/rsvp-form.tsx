@@ -45,7 +45,7 @@ export function RsvpForm({ slug }: { slug: string }) {
   if (state === 'success') {
     return (
       <div className="rounded-[24px] border border-[#cfe3db] bg-[#eff7f4] px-6 py-8 text-center shadow-[0_16px_45px_rgba(42,92,75,.08)]" role="status">
-        <span className="mx-auto grid size-12 place-items-center rounded-full bg-[#2d6f5d] text-white"><Check className="size-6" /></span>
+        <span className="liquid-icon liquid-icon--sage-strong mx-auto size-12 rounded-full"><Check className="size-6" /></span>
         <h2 className="mt-4 font-heading text-2xl font-semibold text-[#23473e]">Yanıtınız kaydedildi</h2>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#557069]">Bizi haberdar ettiğiniz için teşekkür ederiz. Yanıtınızı değiştirmek isterseniz bu sayfayı yeniden kullanabilirsiniz.</p>
         <Button type="button" variant="outline" className="mt-5 h-10 border-[#c5dbd3] bg-white" onClick={() => setState('idle')}>Yanıtımı güncelle</Button>
@@ -81,12 +81,12 @@ export function RsvpForm({ slug }: { slug: string }) {
       </div>
 
       {status === 'yes' && (
-        <div className="mt-5 flex items-center justify-between rounded-2xl border border-[#e8dfda] bg-white px-4 py-3">
-          <div><p className="text-xs font-semibold text-[#554c49]">Toplam kaç kişi geleceksiniz?</p><p className="mt-0.5 text-[11px] text-muted-foreground">Siz dahil</p></div>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setPartySize(Math.max(1, partySize - 1))} aria-label="Kişi sayısını azalt" className="grid size-9 place-items-center rounded-full border border-[#e6dad4] hover:bg-muted"><Minus className="size-4" /></button>
+        <div className="mt-5 flex flex-col items-stretch gap-3 rounded-2xl border border-[#e8dfda] bg-white px-4 py-3 min-[370px]:flex-row min-[370px]:items-center min-[370px]:justify-between">
+          <div className="min-w-0"><p className="text-xs font-semibold text-[#554c49]">Toplam kaç kişi geleceksiniz?</p><p className="mt-0.5 text-[11px] text-muted-foreground">Siz dahil</p></div>
+          <div className="flex shrink-0 items-center justify-end gap-3">
+            <button type="button" onClick={() => setPartySize(Math.max(1, partySize - 1))} aria-label="Kişi sayısını azalt" className="liquid-icon-button size-11 rounded-full"><Minus className="size-4" /></button>
             <output className="w-5 text-center font-heading text-xl font-semibold" aria-live="polite">{partySize}</output>
-            <button type="button" onClick={() => setPartySize(Math.min(20, partySize + 1))} aria-label="Kişi sayısını artır" className="grid size-9 place-items-center rounded-full border border-[#e6dad4] hover:bg-muted"><Plus className="size-4" /></button>
+            <button type="button" onClick={() => setPartySize(Math.min(20, partySize + 1))} aria-label="Kişi sayısını artır" className="liquid-icon-button size-11 rounded-full"><Plus className="size-4" /></button>
           </div>
         </div>
       )}

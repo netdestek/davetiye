@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             className="inline-flex items-center gap-3"
             aria-label="Davetly ana sayfa"
           >
-            <span className="grid size-11 place-items-center rounded-[15px] bg-primary text-primary-foreground shadow-[0_10px_28px_rgba(133,43,61,.2)]">
+            <span className="liquid-icon liquid-icon--brand size-11 rounded-[15px]">
               <Heart className="size-5 fill-current" strokeWidth={1.8} />
             </span>
             <span className="font-heading text-[26px] font-semibold tracking-[-0.035em]">
@@ -111,7 +111,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           oturumu
         </div>
         <div className="relative my-auto max-w-[470px]">
-          <span className="grid size-12 place-items-center rounded-2xl bg-white/10">
+          <span className="liquid-icon liquid-icon--on-dark size-12 rounded-2xl">
             <Sparkles className="size-5 text-[#efc9ba]" />
           </span>
           <blockquote className="mt-8 font-heading text-[38px] font-medium italic leading-[1.25] tracking-[-0.035em]">
