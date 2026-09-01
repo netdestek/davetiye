@@ -5,8 +5,8 @@ import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, CalendarDays, Check, CheckCircle2, Copy, Film,
-  Heart, ImageIcon, KeyRound, Link2, LoaderCircle, MapPin, Play, Send, ShieldCheck,
-  Sparkles, Upload, Users, WandSparkles,
+  Heart, KeyRound, Link2, LoaderCircle, MapPin, Play, Send, ShieldCheck,
+  Sparkles, Users, WandSparkles,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -25,21 +25,20 @@ const steps = [
   { label: 'Ön izle', icon: Sparkles },
 ];
 
-const VIDEO_MAX_BYTES = 250 * 1024 * 1024;
-const POSTER_MAX_BYTES = 10 * 1024 * 1024;
-const DEFAULT_PART_SIZE = 8 * 1024 * 1024;
-const VIDEO_TYPES = new Set(['video/mp4', 'video/webm']);
-const POSTER_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ACTIVATION_CODE_PATTERN = /^WED-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/;
 
-type UploadKind = 'video' | 'poster';
-type UploadedPart = { partNumber: number; etag: string };
 type PublishResult = { url?: string; error?: string };
 
-type InitiateResult = {
-  key?: string;
-  uploadId?: string;
-  partSize?: number;
+type CatalogVideo = {
+  id: string;
+  title: string;
+  contentType: string;
+  sizeBytes: number;
+  previewUrl: string;
+};
+
+type VideoCatalogResult = {
+  videos?: CatalogVideo[];
   error?: string;
 };
 
@@ -78,121 +77,6 @@ async function readJson<T>(response: Response): Promise<T | null> {
   }
 }
 
-async function deleteCompletedUpload(key: string) {
-  await fetch('/api/uploads', {
-    method: 'DELETE',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ action: 'delete', key }),
-  });
-}
-
-function contentTypeFor(file: File, kind: UploadKind) {
-  if (file.type) return file.type;
-  const extension = file.name.split('.').pop()?.toLocaleLowerCase('en-US');
-  if (kind === 'video') return extension === 'webm' ? 'video/webm' : 'video/mp4';
-  if (extension === 'png') return 'image/png';
-  if (extension === 'webp') return 'image/webp';
-  return 'image/jpeg';
-}
-
-async function uploadPartWithRetry(
-  key: string,
-  uploadId: string,
-  partNumber: number,
-  chunk: Blob,
-) {
-  const query = new URLSearchParams({ key, uploadId, partNumber: String(partNumber) });
-  let lastError = 'Yükleme parçası gönderilemedi.';
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      const response = await fetch(`/api/uploads?${query.toString()}`, {
-        method: 'PUT',
-        headers: { 'content-type': 'application/octet-stream' },
-        body: chunk,
-      });
-      const result = await readJson<UploadedPart & { error?: string }>(response);
-      if (response.ok && result?.etag) return result;
-      lastError = result?.error || lastError;
-    } catch {
-      lastError = 'Ağ bağlantısı nedeniyle yükleme parçası gönderilemedi.';
-    }
-    await new Promise((resolve) => window.setTimeout(resolve, 350 * (attempt + 1)));
-  }
-
-  throw new Error(lastError);
-}
-
-async function uploadFile(
-  file: File,
-  kind: UploadKind,
-  onProgress: (percent: number) => void,
-) {
-  const contentType = contentTypeFor(file, kind);
-  const initiateResponse = await fetch('/api/uploads', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      action: 'initiate',
-      kind,
-      fileName: file.name,
-      contentType,
-      size: file.size,
-    }),
-  });
-  const initiated = await readJson<InitiateResult>(initiateResponse);
-  if (!initiateResponse.ok || !initiated?.key || !initiated.uploadId) {
-    throw new Error(initiated?.error || 'Yükleme başlatılamadı.');
-  }
-
-  const key = initiated.key;
-  const uploadId = initiated.uploadId;
-  const partSize = initiated.partSize || DEFAULT_PART_SIZE;
-  const partCount = Math.ceil(file.size / partSize);
-  const uploadedParts: UploadedPart[] = [];
-  let nextPartIndex = 0;
-  let completedBytes = 0;
-
-  try {
-    async function worker() {
-      while (nextPartIndex < partCount) {
-        const index = nextPartIndex;
-        nextPartIndex += 1;
-        const start = index * partSize;
-        const end = Math.min(file.size, start + partSize);
-        const chunk = file.slice(start, end);
-        const part = await uploadPartWithRetry(key, uploadId, index + 1, chunk);
-        uploadedParts.push(part);
-        completedBytes += chunk.size;
-        onProgress(Math.min(99, Math.round((completedBytes / file.size) * 100)));
-      }
-    }
-
-    await Promise.all(
-      Array.from({ length: Math.min(3, partCount) }, () => worker()),
-    );
-
-    const completeResponse = await fetch('/api/uploads', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'complete', key, uploadId, parts: uploadedParts }),
-    });
-    const completed = await readJson<{ key?: string; error?: string }>(completeResponse);
-    if (!completeResponse.ok || !completed?.key) {
-      throw new Error(completed?.error || 'Yükleme tamamlanamadı.');
-    }
-    onProgress(100);
-    return completed.key;
-  } catch (error) {
-    await fetch('/api/uploads', {
-      method: 'DELETE',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ key, uploadId }),
-    }).catch(() => undefined);
-    throw error;
-  }
-}
-
 export function InvitationBuilder() {
   const [step, setStep] = useState(1);
   const [hostNames, setHostNames] = useState('Elif & Arda');
@@ -200,10 +84,12 @@ export function InvitationBuilder() {
   const [venueName, setVenueName] = useState('Liva Davet');
   const [venueAddress, setVenueAddress] = useState('Polonezköy, Beykoz / İstanbul');
   const [description, setDescription] = useState('Bu güzel günümüzde sizi de aramızda görmekten mutluluk duyarız.');
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [videos, setVideos] = useState<CatalogVideo[]>([]);
+  const [selectedVideoId, setSelectedVideoId] = useState('');
+  const [videosLoading, setVideosLoading] = useState(false);
+  const [videosError, setVideosError] = useState('');
+  const [catalogRequest, setCatalogRequest] = useState(0);
   const [publishing, setPublishing] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [publishError, setPublishError] = useState('');
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -212,8 +98,10 @@ export function InvitationBuilder() {
   const [validatingCode, setValidatingCode] = useState(false);
   const [activationError, setActivationError] = useState('');
 
-  const videoUrl = useMemo(() => videoFile ? URL.createObjectURL(videoFile) : '', [videoFile]);
-  const posterUrl = useMemo(() => posterFile ? URL.createObjectURL(posterFile) : '', [posterFile]);
+  const selectedVideo = useMemo(
+    () => videos.find((video) => video.id === selectedVideoId) ?? null,
+    [selectedVideoId, videos],
+  );
   const eventPreviewLabel = useMemo(() => {
     const date = parseStoredEventDateTime(eventAt);
     return date
@@ -223,57 +111,39 @@ export function InvitationBuilder() {
       : 'Geçersiz tarih';
   }, [eventAt]);
 
-  useEffect(() => () => {
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
-  }, [videoUrl]);
+  useEffect(() => {
+    if (!activationApproved) return;
+    let cancelled = false;
+    setVideosLoading(true);
+    setVideosError('');
 
-  useEffect(() => () => {
-    if (posterUrl) URL.revokeObjectURL(posterUrl);
-  }, [posterUrl]);
+    fetch('/api/videos', { cache: 'no-store' })
+      .then(async (response) => {
+        const result = await readJson<VideoCatalogResult>(response);
+        if (!response.ok || !result?.videos) {
+          throw new Error(result?.error || 'Video listesi alınamadı.');
+        }
+        if (cancelled) return;
+        setVideos(result.videos);
+        setSelectedVideoId((current) => (
+          current && result.videos?.some((video) => video.id === current)
+            ? current
+            : result.videos?.[0]?.id ?? ''
+        ));
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setVideos([]);
+          setSelectedVideoId('');
+          setVideosError(error instanceof Error ? error.message : 'Video listesi alınamadı.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setVideosLoading(false);
+      });
 
-  function chooseVideo(file: File | null) {
-    setPublishError('');
-    if (!file) { setVideoFile(null); return; }
-    const contentType = contentTypeFor(file, 'video');
-    if (!VIDEO_TYPES.has(contentType)) {
-      setVideoFile(null);
-      setPublishError('Lütfen MP4 veya WebM biçiminde hazır bir video seçin.');
-      return;
-    }
-    if (file.size <= 0) {
-      setVideoFile(null);
-      setPublishError('Boş bir video dosyası yüklenemez.');
-      return;
-    }
-    if (file.size > VIDEO_MAX_BYTES) {
-      setVideoFile(null);
-      setPublishError('Video en fazla 250 MB olabilir.');
-      return;
-    }
-    setVideoFile(file);
-  }
-
-  function choosePoster(file: File | null) {
-    setPublishError('');
-    if (!file) { setPosterFile(null); return; }
-    const contentType = contentTypeFor(file, 'poster');
-    if (!POSTER_TYPES.has(contentType)) {
-      setPosterFile(null);
-      setPublishError('Kapak görseli JPG, PNG veya WebP biçiminde olmalıdır.');
-      return;
-    }
-    if (file.size <= 0) {
-      setPosterFile(null);
-      setPublishError('Boş bir kapak görseli yüklenemez.');
-      return;
-    }
-    if (file.size > POSTER_MAX_BYTES) {
-      setPosterFile(null);
-      setPublishError('Kapak görseli en fazla 10 MB olabilir.');
-      return;
-    }
-    setPosterFile(file);
-  }
+    return () => { cancelled = true; };
+  }, [activationApproved, catalogRequest]);
 
   function updateActivationCode(value: string) {
     setActivationCode(formatActivationCode(value));
@@ -319,37 +189,17 @@ export function InvitationBuilder() {
       setPublishError('Davetiyeyi oluşturmadan önce aktivasyon kodunuzu doğrulayın.');
       return;
     }
-    if (!videoFile) {
-      setPublishError('Yayınlamadan önce hazır videonuzu yükleyin.');
+    if (!selectedVideoId) {
+      setPublishError('Yayınlamadan önce listeden bir video seçin.');
       return;
     }
 
     setPublishing(true);
-    setUploadProgress(0);
     setPublishError('');
-    const completedKeys: string[] = [];
-    let safeToDeleteUploads = true;
     try {
-      const videoWeight = posterFile ? 90 : 100;
-      const videoKey = await uploadFile(
-        videoFile,
-        'video',
-        (progress) => setUploadProgress(Math.round((progress * videoWeight) / 100)),
-      );
-      completedKeys.push(videoKey);
-      const posterKey = posterFile
-        ? await uploadFile(
-            posterFile,
-            'poster',
-            (progress) => setUploadProgress(90 + Math.round(progress / 10)),
-          )
-        : undefined;
-      if (posterKey) completedKeys.push(posterKey);
-
       let response: Response;
       try {
-        safeToDeleteUploads = false;
-        response = await fetch('/api/invitations/create', {
+        response = await fetch('/api/invitations', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -358,24 +208,18 @@ export function InvitationBuilder() {
             venueName,
             venueAddress,
             description,
-            videoKey,
-            posterKey,
+            videoId: selectedVideoId,
           }),
         });
       } catch {
-        throw new Error('Davetiye yayınlandı mı doğrulanamadı. Yüklenen dosyalar korundu; tekrar denemeden önce davetiyelerinizi kontrol edin.');
+        throw new Error('Davetiye yayınlandı mı doğrulanamadı. Tekrar denemeden önce davetiyelerinizi kontrol edin.');
       }
       const result = await readJson<PublishResult>(response);
       if (!response.ok || !result?.url) {
-        safeToDeleteUploads = true;
         throw new Error(result?.error || 'Davetiye yayınlanamadı.');
       }
-      setUploadProgress(100);
       setShareUrl(result.url);
     } catch (cause) {
-      if (safeToDeleteUploads && completedKeys.length) {
-        await Promise.all(completedKeys.map((key) => deleteCompletedUpload(key).catch(() => undefined)));
-      }
       setPublishError(cause instanceof Error ? cause.message : 'Bir sorun oluştu.');
     } finally {
       setPublishing(false);
@@ -400,8 +244,8 @@ export function InvitationBuilder() {
         return;
       }
     }
-    if (step === 2 && !videoFile) {
-      setPublishError('Devam etmek için hazır davetiye videonuzu seçin.');
+    if (step === 2 && !selectedVideoId) {
+      setPublishError('Devam etmek için listeden bir davetiye videosu seçin.');
       return;
     }
     setStep((current) => Math.min(3, current + 1));
@@ -473,28 +317,52 @@ export function InvitationBuilder() {
           {step === 2 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">2. adım</p>
-              <h1 className="mt-2 font-heading text-[29px] font-semibold tracking-[-0.03em]">Hazır videonu yükle</h1>
-              <p className="mt-2 text-sm text-muted-foreground">Video olduğu gibi yayınlanır; Davetly videonun görüntüsünü veya sesini değiştirmez.</p>
-              <div className="mt-7 space-y-4">
-                <UploadBox
-                  title="Davetiye videosu"
-                  description="MP4 önerilir · En fazla 250 MB"
-                  icon={Film}
-                  file={videoFile}
-                  accept="video/mp4,video/webm,.mp4,.webm"
-                  required
-                  onFile={chooseVideo}
-                />
-                <UploadBox
-                  title="Kapak görseli"
-                  description="İsteğe bağlı · JPG, PNG veya WebP · En fazla 10 MB"
-                  icon={ImageIcon}
-                  file={posterFile}
-                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                  onFile={choosePoster}
-                />
+              <h1 className="mt-2 font-heading text-[29px] font-semibold tracking-[-0.03em]">Davetiye videonu seç</h1>
+              <p className="mt-2 text-sm text-muted-foreground">Yönetici tarafından hazırlanan videolardan birini seç. Seçimin canlı ön izlemede hemen görünür.</p>
+              <div className="mt-7">
+                {videosLoading ? (
+                  <div className="flex min-h-40 items-center justify-center rounded-2xl border border-[#eadfd8] bg-white text-sm text-muted-foreground">
+                    <LoaderCircle className="mr-2 size-4 animate-spin" /> Videolar yükleniyor
+                  </div>
+                ) : videosError ? (
+                  <div className="rounded-2xl border border-[#efd2d0] bg-[#fdf3f2] p-5 text-center">
+                    <p className="text-sm font-semibold text-[#963f4c]">{videosError}</p>
+                    <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => setCatalogRequest((current) => current + 1)}>Tekrar dene</Button>
+                  </div>
+                ) : videos.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-[#d9cac3] bg-white p-7 text-center">
+                    <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#f6ebe8] text-primary"><Film className="size-5" /></span>
+                    <p className="mt-3 text-sm font-semibold">Henüz seçilebilir video yok</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">Yönetici yeni bir video yayınladığında burada görünecek.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {videos.map((video) => {
+                      const selected = video.id === selectedVideoId;
+                      return (
+                        <button
+                          key={video.id}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => { setSelectedVideoId(video.id); setPublishError(''); }}
+                          className={`overflow-hidden rounded-2xl border bg-white text-left transition ${selected ? 'border-primary ring-2 ring-primary/15' : 'border-[#eadfd8] hover:border-[#caa0a7]'}`}
+                        >
+                          <span className="relative block aspect-video overflow-hidden bg-[#30282a]">
+                            <video src={video.previewUrl} preload="metadata" muted playsInline className="size-full object-cover" />
+                            <span className={`absolute right-3 top-3 grid size-7 place-items-center rounded-full border ${selected ? 'border-primary bg-primary text-white' : 'border-white/60 bg-black/30 text-transparent'}`}><Check className="size-4" /></span>
+                            <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-white">Hazır video</span>
+                          </span>
+                          <span className="flex items-center justify-between gap-3 p-4">
+                            <span className="min-w-0 truncate text-sm font-semibold">{video.title}</span>
+                            <span className="shrink-0 text-[10px] text-muted-foreground">{formatBytes(video.sizeBytes)}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <div className="mt-5 flex items-start gap-3 rounded-2xl bg-[#edf4f1] p-4 text-xs leading-5 text-[#526a63]"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#2d6c5b]" /><p>Dosya küçük parçalara bölünerek güvenli biçimde R2 depolamaya aktarılır. Bağlantı kesilen bir parça otomatik yeniden denenir; videonun tamamı uygulama belleğine alınmaz.</p></div>
+              <div className="mt-5 flex items-start gap-3 rounded-2xl bg-[#edf4f1] p-4 text-xs leading-5 text-[#526a63]"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#2d6c5b]" /><p>Videolar yalnızca yönetici tarafından eklenir ve yayınlanır. Siz dosya yüklemeden güvenli katalogdan seçim yaparsınız.</p></div>
               {publishError && <p className="mt-4 rounded-xl bg-[#f9e9e8] px-3 py-2.5 text-xs font-medium text-[#963f4c]" role="alert">{publishError}</p>}
             </div>
           )}
@@ -503,23 +371,16 @@ export function InvitationBuilder() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">3. adım</p>
               <h1 className="mt-2 font-heading text-[29px] font-semibold tracking-[-0.03em]">Son bir kez kontrol et</h1>
-              <p className="mt-2 text-sm text-muted-foreground">Hazır olduğunda videonu yükle, davetiyeyi yayınla ve paylaşım bağlantını oluştur.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Hazır olduğunda davetiyeyi yayınla ve paylaşım bağlantını oluştur.</p>
               {!shareUrl ? (
                 <div className="mt-7 space-y-3">
                   <ReviewRow icon={Users} label="Etkinlik" value={hostNames} />
                   <ReviewRow icon={CalendarDays} label="Tarih" value={eventPreviewLabel} />
                   <ReviewRow icon={MapPin} label="Mekân" value={`${venueName} · ${venueAddress}`} />
-                  <ReviewRow icon={Film} label="Hazır video" value={`${videoFile?.name ?? 'Video seçilmedi'} · ${videoFile ? formatBytes(videoFile.size) : '—'}`} />
-                  {posterFile && <ReviewRow icon={ImageIcon} label="Kapak görseli" value={`${posterFile.name} · ${formatBytes(posterFile.size)}`} />}
-                  {publishing && (
-                    <div className="rounded-2xl border border-[#d8e5df] bg-[#f4f8f6] p-4">
-                      <div className="flex items-center justify-between text-xs"><span className="font-semibold">Video R2’ye yükleniyor</span><span className="font-bold text-[#2c6c5a]">%{uploadProgress}</span></div>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#dfeae6]"><div className="h-full rounded-full bg-[#347763] transition-[width] duration-300" style={{ width: `${uploadProgress}%` }} /></div>
-                    </div>
-                  )}
+                  <ReviewRow icon={Film} label="Hazır video" value={selectedVideo ? `${selectedVideo.title} · ${formatBytes(selectedVideo.sizeBytes)}` : 'Video seçilmedi'} />
                   {publishError && <p className="rounded-xl bg-[#f9e9e8] px-3 py-2.5 text-xs font-medium text-[#963f4c]" role="alert">{publishError}</p>}
                   <Button onClick={publish} disabled={publishing} className="h-12 w-full rounded-xl text-sm shadow-[0_12px_28px_rgba(133,48,68,.2)]">
-                    {publishing ? <><LoaderCircle className="animate-spin" /> Yükleniyor · %{uploadProgress}</> : <><Sparkles /> Videoyu yükle ve yayınla</>}
+                    {publishing ? <><LoaderCircle className="animate-spin" /> Davetiye yayınlanıyor</> : <><Sparkles /> Davetiyeyi yayınla</>}
                   </Button>
                 </div>
               ) : (
@@ -546,17 +407,13 @@ export function InvitationBuilder() {
           <div className="mb-3 flex items-center justify-between"><p className="text-xs font-semibold text-[#655a56]">Canlı ön izleme</p><Badge variant="outline" className="bg-white text-[10px]"><Film className="size-3" /> Hazır video</Badge></div>
           <div className="mx-auto w-full max-w-[360px] rounded-[30px] border-[7px] border-[#2e2929] bg-[#2e2929] p-1 shadow-[0_28px_75px_rgba(40,29,28,.22)]">
             <div className="relative aspect-[9/16] overflow-hidden rounded-[21px] bg-gradient-to-br from-[#6d3041] via-[#403a3e] to-[#263f3a] text-white">
-              {videoUrl ? (
-                <video key={videoUrl} src={videoUrl} poster={posterUrl || undefined} muted loop autoPlay playsInline className="absolute inset-0 size-full object-cover" />
-              ) : posterUrl ? (
-                // Blob-backed local previews cannot use the framework image optimizer.
-                // eslint-disable-next-line next/no-img-element
-                <img src={posterUrl} alt="Seçilen video kapağı" className="absolute inset-0 size-full object-cover" />
-              ) : null}
+              {selectedVideo && (
+                <video key={selectedVideo.previewUrl} src={selectedVideo.previewUrl} muted loop autoPlay playsInline className="absolute inset-0 size-full object-cover" />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/10" />
               <div className="absolute left-1/2 top-3 h-4 w-16 -translate-x-1/2 rounded-full bg-black/65" />
-              {!videoUrl && <div className="absolute inset-0 grid place-items-center text-center"><div><span className="mx-auto grid size-14 place-items-center rounded-full border border-white/30 bg-white/10"><Upload className="size-5" /></span><p className="mt-3 text-xs font-semibold">Hazır videonu seç</p><p className="mt-1 text-[9px] text-white/60">MP4 veya WebM</p></div></div>}
-              {videoUrl && <span className="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-black/15 backdrop-blur"><Play className="ml-0.5 size-4 fill-white" /></span>}
+              {!selectedVideo && <div className="absolute inset-0 grid place-items-center text-center"><div><span className="mx-auto grid size-14 place-items-center rounded-full border border-white/30 bg-white/10"><Film className="size-5" /></span><p className="mt-3 text-xs font-semibold">Katalogdan video seç</p><p className="mt-1 text-[9px] text-white/60">Yönetici videoları</p></div></div>}
+              {selectedVideo && <span className="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/35 bg-black/15 backdrop-blur"><Play className="ml-0.5 size-4 fill-white" /></span>}
               <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/15 bg-black/25 p-3 backdrop-blur-md"><p className="font-heading text-lg italic">{hostNames || 'İsimleriniz'}</p><div className="mt-1.5 flex items-center gap-2 text-[9px] text-white/75"><MapPin className="size-3" /><span className="truncate">{venueName || 'Mekân adı'}</span></div></div>
             </div>
           </div>
@@ -627,17 +484,6 @@ function ActivationCodeGate({
 
 function Field({ label, icon: Icon, wide, children }: { label: string; icon: LucideIcon; wide?: boolean; children: React.ReactNode }) {
   return <label className={wide ? 'sm:col-span-2' : ''}><span className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#554c49]"><Icon className="size-3.5 text-primary" />{label}</span>{children}</label>;
-}
-
-function UploadBox({ title, description, icon: Icon, file, accept, required, onFile }: { title: string; description: string; icon: LucideIcon; file: File | null; accept: string; required?: boolean; onFile: (file: File | null) => void }) {
-  return (
-    <label className={`flex cursor-pointer items-center gap-4 rounded-2xl border border-dashed p-5 transition hover:border-[#bf8891] hover:bg-[#fcf7f5] ${file ? 'border-[#8bb3a7] bg-[#f1f7f4]' : 'border-[#d9cac3] bg-white'}`}>
-      <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${file ? 'bg-[#dcece6] text-[#2c6b5a]' : 'bg-[#f6ebe8] text-primary'}`}>{file ? <Check className="size-5" /> : <Icon className="size-5" />}</span>
-      <span className="min-w-0 flex-1"><span className="flex items-center gap-2 text-sm font-semibold">{title}{required && <span className="text-[9px] uppercase tracking-[0.08em] text-primary">Zorunlu</span>}</span><span className="mt-1 block truncate text-xs text-muted-foreground">{file ? `${file.name} · ${formatBytes(file.size)}` : description}</span></span>
-      <span className="hidden items-center gap-1.5 rounded-lg border border-[#dfd2cc] bg-white px-3 py-2 text-xs font-semibold sm:flex"><Upload className="size-3.5" /> Seç</span>
-      <input type="file" accept={accept} className="sr-only" onChange={(event) => onFile(event.target.files?.[0] ?? null)} />
-    </label>
-  );
 }
 
 function ReviewRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {

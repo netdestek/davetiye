@@ -37,12 +37,21 @@ const schemaStatements = [
     display_name TEXT, role TEXT NOT NULL DEFAULT 'user',
     status TEXT NOT NULL DEFAULT 'active', created_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
+  `CREATE TABLE IF NOT EXISTS video_library (
+    id TEXT PRIMARY KEY, title TEXT NOT NULL, video_key TEXT NOT NULL UNIQUE,
+    content_type TEXT NOT NULL, size_bytes INTEGER NOT NULL CHECK(size_bytes > 0),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','archived')),
+    created_by_user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE RESTRICT,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()), updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  )`,
   `CREATE TABLE IF NOT EXISTS invitations (
     id TEXT PRIMARY KEY, owner_user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     title TEXT NOT NULL, host_names TEXT NOT NULL, event_at TEXT NOT NULL,
     timezone TEXT NOT NULL DEFAULT 'Europe/Istanbul', venue_name TEXT, venue_address TEXT,
     map_url TEXT, description TEXT, video_key TEXT, poster_key TEXT, audio_key TEXT,
     public_token_hash TEXT NOT NULL UNIQUE, activation_code_id TEXT UNIQUE,
+    video_library_id TEXT REFERENCES video_library(id) ON DELETE RESTRICT,
+    video_config_json TEXT NOT NULL DEFAULT '{"version":1,"overlays":[]}',
     status TEXT NOT NULL DEFAULT 'draft',
     created_at INTEGER NOT NULL DEFAULT (unixepoch()), updated_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
@@ -86,6 +95,8 @@ const schemaStatements = [
     updated_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
   'CREATE INDEX IF NOT EXISTS idx_invitations_owner_updated ON invitations(owner_user_id, updated_at DESC)',
+  'CREATE INDEX IF NOT EXISTS idx_invitations_video_library ON invitations(video_library_id)',
+  'CREATE INDEX IF NOT EXISTS idx_video_library_status_created ON video_library(status, created_at DESC)',
   'CREATE INDEX IF NOT EXISTS idx_activation_codes_status_created ON activation_codes(status, created_at DESC)',
   'CREATE UNIQUE INDEX IF NOT EXISTS idx_activation_codes_order_reference ON activation_codes(order_reference)',
   'CREATE INDEX IF NOT EXISTS idx_activation_sessions_code_status ON activation_sessions(code_id, status, expires_at)',
@@ -107,8 +118,25 @@ async function ensureActivationSchema(db: D1Database) {
       if (!refreshed.results.some((column) => column.name === 'activation_code_id')) throw error;
     }
   }
+  if (!columns.results.some((column) => column.name === 'video_library_id')) {
+    try {
+      await db.prepare('ALTER TABLE invitations ADD COLUMN video_library_id TEXT REFERENCES video_library(id) ON DELETE RESTRICT').run();
+    } catch (error) {
+      const refreshed = await db.prepare('PRAGMA table_info(invitations)').all<{ name: string }>();
+      if (!refreshed.results.some((column) => column.name === 'video_library_id')) throw error;
+    }
+  }
+  if (!columns.results.some((column) => column.name === 'video_config_json')) {
+    try {
+      await db.prepare(`ALTER TABLE invitations ADD COLUMN video_config_json TEXT NOT NULL DEFAULT '{"version":1,"overlays":[]}'`).run();
+    } catch (error) {
+      const refreshed = await db.prepare('PRAGMA table_info(invitations)').all<{ name: string }>();
+      if (!refreshed.results.some((column) => column.name === 'video_config_json')) throw error;
+    }
+  }
 
   await db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_activation_code ON invitations(activation_code_id)').run();
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_invitations_video_library ON invitations(video_library_id)').run();
 }
 
 export async function hashPublicToken(token: string) {

@@ -8,6 +8,7 @@ import {
 } from '@/lib/activation-session';
 import { ensureDatabase, hashPublicToken } from '@/lib/d1';
 import { normalizeEventDateTime } from '@/lib/event-time';
+import { getPublishedVideo } from '@/lib/video-library';
 
 type InvitationBody = {
   hostNames?: unknown;
@@ -15,21 +16,7 @@ type InvitationBody = {
   venueName?: unknown;
   venueAddress?: unknown;
   description?: unknown;
-  videoKey?: unknown;
-  posterKey?: unknown;
-};
-
-type MediaKind = 'video' | 'poster';
-
-const MEDIA_RULES = {
-  video: {
-    maxBytes: 250 * 1024 * 1024,
-    contentTypes: new Set(['video/mp4', 'video/webm']),
-  },
-  poster: {
-    maxBytes: 10 * 1024 * 1024,
-    contentTypes: new Set(['image/jpeg', 'image/png', 'image/webp']),
-  },
+  videoId?: unknown;
 };
 
 function createToken() {
@@ -44,26 +31,6 @@ function isSameOrigin(request: Request) {
 
 function textValue(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
-}
-
-async function validateOwnedMedia(key: string, kind: MediaKind, userId: string) {
-  const prefix = `uploads/${encodeURIComponent(userId)}/`;
-  if (!key.startsWith(prefix) || key.includes('..')) return false;
-
-  const session = await env.DB.prepare(`SELECT expected_size, content_type FROM media_uploads
-    WHERE object_key = ? AND owner_user_id = ? AND kind = ?
-    AND status IN ('completed','attached') LIMIT 1`)
-    .bind(key, userId, kind).first<{ expected_size: number; content_type: string }>();
-  if (!session) return false;
-
-  const object = await env.FILES.head(key);
-  if (!object) return false;
-  const contentType = object.httpMetadata?.contentType ?? '';
-  return object.customMetadata?.ownerUserId === userId &&
-    object.customMetadata?.mediaKind === kind &&
-    object.size === session.expected_size && object.size <= MEDIA_RULES[kind].maxBytes &&
-    contentType === session.content_type &&
-    MEDIA_RULES[kind].contentTypes.has(contentType);
 }
 
 export async function POST(request: Request) {
@@ -92,18 +59,20 @@ export async function POST(request: Request) {
   const venueName = textValue(body.venueName);
   const venueAddress = textValue(body.venueAddress);
   const description = textValue(body.description);
-  const videoKey = textValue(body.videoKey);
-  const posterKey = textValue(body.posterKey);
+  const videoId = textValue(body.videoId);
   if (hostNames.length < 2 || hostNames.length > 120 || !eventAt ||
       venueName.length < 2 || venueName.length > 160 ||
       venueAddress.length > 300 || description.length > 300) {
     return NextResponse.json({ error: 'Etkinlik adı, tarihi ve mekân bilgilerini kontrol edin.' }, { status: 422 });
   }
-  if (!videoKey || !(await validateOwnedMedia(videoKey, 'video', user.userId))) {
-    return NextResponse.json({ error: 'Yayınlanabilir bir video yükleyin.' }, { status: 422 });
+  const selectedVideo = videoId ? await getPublishedVideo(videoId) : null;
+  if (!selectedVideo) {
+    return NextResponse.json({ error: 'Yayınlanmış videolardan birini seçin.' }, { status: 422 });
   }
-  if (posterKey && !(await validateOwnedMedia(posterKey, 'poster', user.userId))) {
-    return NextResponse.json({ error: 'Kapak görseli doğrulanamadı.' }, { status: 422 });
+  const videoObject = await env.FILES.head(selectedVideo.video_key);
+  if (!videoObject || videoObject.size !== selectedVideo.size_bytes ||
+      videoObject.httpMetadata?.contentType !== selectedVideo.content_type) {
+    return NextResponse.json({ error: 'Seçilen video şu anda kullanılamıyor. Başka bir video seçin.' }, { status: 422 });
   }
 
   const token = createToken();
@@ -133,13 +102,16 @@ export async function POST(request: Request) {
           )`).bind(user.userId, invitationId, user.codeId, user.id, user.userId, user.tokenHash),
       env.DB.prepare(`INSERT INTO invitations (
       id, owner_user_id, title, host_names, event_at, venue_name, venue_address,
-      map_url, description, video_key, poster_key, public_token_hash, activation_code_id, status
-    ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, id, 'published'
-      FROM activation_codes
-      WHERE id = ? AND status = 'used' AND invitation_id = ? AND used_by_user_id = ?`).bind(
+      map_url, description, video_key, poster_key, public_token_hash, activation_code_id,
+      video_library_id, video_config_json, status
+    ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, video_library.video_key, NULL, ?, activation_codes.id,
+      video_library.id, '{"version":1,"overlays":[]}', 'published'
+      FROM activation_codes JOIN video_library ON video_library.id = ? AND video_library.status = 'published'
+      WHERE activation_codes.id = ? AND activation_codes.status = 'used'
+        AND activation_codes.invitation_id = ? AND activation_codes.used_by_user_id = ?`).bind(
         invitationId, user.userId, 'Özel davet', hostNames, eventAt,
-        venueName, venueAddress || null, mapUrl, description || null, videoKey,
-        posterKey || null, tokenHash, user.codeId, invitationId, user.userId,
+        venueName, venueAddress || null, mapUrl, description || null, tokenHash,
+        videoId, user.codeId, invitationId, user.userId,
       ),
       env.DB.prepare(`UPDATE activation_sessions SET
         status = CASE WHEN id = ? THEN 'redeemed' ELSE 'revoked' END,
@@ -147,14 +119,6 @@ export async function POST(request: Request) {
       WHERE code_id = ? AND status = 'active'
         AND EXISTS (SELECT 1 FROM invitations WHERE id = ? AND owner_user_id = ?)`)
         .bind(user.id, user.id, user.codeId, invitationId, user.userId),
-      env.DB.prepare(`UPDATE media_uploads SET status = 'attached', updated_at = unixepoch()
-      WHERE object_key = ? AND owner_user_id = ? AND status IN ('completed','attached')
-        AND EXISTS (SELECT 1 FROM invitations WHERE id = ? AND owner_user_id = ?)`)
-        .bind(videoKey, user.userId, invitationId, user.userId),
-      ...(posterKey ? [env.DB.prepare(`UPDATE media_uploads SET status = 'attached', updated_at = unixepoch()
-      WHERE object_key = ? AND owner_user_id = ? AND status IN ('completed','attached')
-        AND EXISTS (SELECT 1 FROM invitations WHERE id = ? AND owner_user_id = ?)`)
-        .bind(posterKey, user.userId, invitationId, user.userId)] : []),
     ]);
   } catch {
     const current = await env.DB.prepare(`SELECT status FROM activation_codes WHERE id = ? LIMIT 1`)

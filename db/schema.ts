@@ -10,6 +10,21 @@ export const appUsers = sqliteTable('app_users', {
   createdAt: integer('created_at').notNull().default(sql`(unixepoch())`),
 }, (table) => [uniqueIndex('idx_app_users_email').on(table.email)]);
 
+export const videoLibrary = sqliteTable('video_library', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  videoKey: text('video_key').notNull(),
+  contentType: text('content_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  status: text('status', { enum: ['draft', 'published', 'archived'] }).notNull().default('draft'),
+  createdByUserId: text('created_by_user_id').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  createdAt: integer('created_at').notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at').notNull().default(sql`(unixepoch())`),
+}, (table) => [
+  uniqueIndex('idx_video_library_video_key').on(table.videoKey),
+  index('idx_video_library_status_created').on(table.status, table.createdAt),
+]);
+
 export const invitations = sqliteTable('invitations', {
   id: text('id').primaryKey(),
   ownerUserId: text('owner_user_id').notNull().references(() => appUsers.id, { onDelete: 'cascade' }),
@@ -26,6 +41,8 @@ export const invitations = sqliteTable('invitations', {
   audioKey: text('audio_key'),
   publicTokenHash: text('public_token_hash').notNull(),
   activationCodeId: text('activation_code_id'),
+  videoLibraryId: text('video_library_id').references(() => videoLibrary.id, { onDelete: 'restrict' }),
+  videoConfigJson: text('video_config_json').notNull().default('{"version":1,"overlays":[]}'),
   status: text('status', { enum: ['draft', 'published', 'archived'] }).notNull().default('draft'),
   createdAt: integer('created_at').notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at').notNull().default(sql`(unixepoch())`),
@@ -33,6 +50,7 @@ export const invitations = sqliteTable('invitations', {
   uniqueIndex('idx_invitations_public_token').on(table.publicTokenHash),
   uniqueIndex('idx_invitations_activation_code').on(table.activationCodeId),
   index('idx_invitations_owner_updated').on(table.ownerUserId, table.updatedAt),
+  index('idx_invitations_video_library').on(table.videoLibraryId),
 ]);
 
 export const activationCodes = sqliteTable('activation_codes', {
