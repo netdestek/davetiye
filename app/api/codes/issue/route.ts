@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { env } from 'cloudflare:workers';
 
-import { getChatGPTUser } from '@/app/chatgpt-auth';
+import { ensureConfiguredAdmin, getChatGPTUser } from '@/app/chatgpt-auth';
 import { createActivationCode, hashActivationCode } from '@/lib/activation-codes';
 import { ensureDatabase } from '@/lib/d1';
 
@@ -23,6 +23,9 @@ export async function POST(request: Request) {
 
   const user = await getChatGPTUser();
   if (!user) return NextResponse.json({ error: 'Giriş yapmalısınız.' }, { status: 401 });
+  if (!(await ensureConfiguredAdmin(user))) {
+    return NextResponse.json({ error: 'Aktivasyon kodu oluşturma yetkiniz yok.' }, { status: 403 });
+  }
 
   let body: IssueBody;
   try {

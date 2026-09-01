@@ -1,5 +1,8 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { env } from 'cloudflare:workers';
+
+import { ensureDatabase } from '@/lib/d1';
 
 export type ChatGPTUser = {
   userId: string;
@@ -46,6 +49,38 @@ export async function requireChatGPTUser(
   if (user) return user;
 
   redirect(chatGPTSignInPath(returnTo));
+}
+
+function configuredAdminEmails() {
+  const value = env.DAVETLY_ADMIN_EMAILS;
+  if (typeof value !== 'string') return new Set<string>();
+
+  return new Set(value.split(',')
+    .map((email) => email.trim().toLocaleLowerCase('en-US'))
+    .filter(Boolean));
+}
+
+/**
+ * Authorizes only an explicitly configured, ChatGPT-authenticated address.
+ * The role is created/renewed server-side; it is never accepted from a browser.
+ */
+export async function ensureConfiguredAdmin(user: ChatGPTUser) {
+  const email = user.email.trim().toLocaleLowerCase('en-US');
+  if (!configuredAdminEmails().has(email)) return false;
+
+  await ensureDatabase();
+  await env.DB.prepare(`INSERT INTO app_users (id, email, display_name, role)
+    VALUES (?, ?, ?, 'admin')
+    ON CONFLICT(id) DO UPDATE SET email = excluded.email,
+      display_name = excluded.display_name, role = 'admin'`)
+    .bind(user.userId, email, user.displayName).run();
+  return true;
+}
+
+export async function requireConfiguredAdmin(returnTo: string): Promise<ChatGPTUser> {
+  const user = await requireChatGPTUser(returnTo);
+  if (!(await ensureConfiguredAdmin(user))) redirect('/');
+  return user;
 }
 
 export function chatGPTSignInPath(returnTo: string): string {

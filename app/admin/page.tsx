@@ -8,6 +8,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ActivationCodeIssuer } from '@/components/activation-code-issuer';
+import { requireConfiguredAdmin } from '@/app/chatgpt-auth';
+
+export const dynamic = 'force-dynamic';
 
 const users = [
   { name: 'Elif Aydın', email: 'elif@ornek.com', plan: 'Plus', invites: 2, status: 'Aktif', joined: '28 Ağu 2026' },
@@ -32,7 +35,9 @@ const nav = [
   { label: 'Kampanyalar', icon: TicketPercent },
 ];
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  await requireConfiguredAdmin('/admin');
+
   return (
     <main className="min-h-screen bg-[#f5f6f8] text-[#25282b] lg:pl-[238px]">
       <aside className="fixed inset-y-0 left-0 hidden w-[238px] flex-col bg-[#182522] px-4 py-5 text-[#d8e2df] lg:flex">
