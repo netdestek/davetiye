@@ -10,6 +10,7 @@ import {
 } from '@/lib/activation-codes';
 import { ACTIVATION_COOKIE_NAME } from '@/lib/activation-session';
 import { ensureDatabase } from '@/lib/d1';
+import { getCurrentUser } from '@/lib/user-auth';
 
 // A video upload can take a while on a mobile connection.  Keep the activation
 // lease aligned with the upload session, while still making it short-lived.
@@ -19,6 +20,12 @@ type ActivationCodeRow = {
   id: string;
   status: 'unused' | 'used';
   template_id: string | null;
+};
+
+type CurrentActivationCodeRow = {
+  status: 'unused' | 'used';
+  reserved_by_user_id: string | null;
+  reserved_until: number | null;
 };
 
 function isSameOrigin(request: Request) {
@@ -33,18 +40,14 @@ function codeFromBody(value: unknown) {
   return normalizeActivationCode(value.code);
 }
 
-function guestOwner() {
-  const id = crypto.randomUUID();
-  return {
-    userId: `guest-${id}`,
-    email: `guest-${id}@activation.davetly.invalid`,
-    displayName: 'Davetiye müşterisi',
-  };
-}
-
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
     return NextResponse.json({ error: 'İstek kaynağı doğrulanamadı.' }, { status: 403 });
+  }
+
+  const user = await getCurrentUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Google hesabınızla giriş yapmanız gerekiyor.' }, { status: 401 });
   }
 
   let body: unknown;
@@ -60,10 +63,6 @@ export async function POST(request: Request) {
   }
 
   await ensureDatabase();
-  // PDF alıcısının ayrıca uygulamaya giriş yapması gerekmez. Yetki yalnızca
-  // kısa ömürlü, HttpOnly aktivasyon çerezine bağlanan geçici hesaptan gelir.
-  const user = guestOwner();
-
   const codeHash = await hashActivationCode(code);
   const activationCode = await env.DB.prepare(`SELECT id, status, template_id FROM activation_codes
     WHERE code_hash = ? LIMIT 1`).bind(codeHash).first<ActivationCodeRow>();
@@ -79,27 +78,40 @@ export async function POST(request: Request) {
   const sessionId = crypto.randomUUID();
   const expiresAt = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS;
   const results = await env.DB.batch([
-    env.DB.prepare(`INSERT INTO app_users (id, email, display_name)
-      VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET email = excluded.email,
-      display_name = excluded.display_name`)
-      .bind(user.userId, user.email.toLowerCase(), user.displayName),
+    env.DB.prepare(`UPDATE activation_codes
+      SET reserved_by_user_id = ?, reserved_until = ?
+      WHERE id = ? AND status = 'unused'
+        AND (reserved_by_user_id IS NULL OR reserved_by_user_id = ?
+          OR reserved_until IS NULL OR reserved_until <= unixepoch())`)
+      .bind(user.id, expiresAt, activationCode.id, user.id),
     env.DB.prepare(`UPDATE activation_sessions SET status = 'expired'
       WHERE code_id = ? AND status = 'active' AND expires_at <= unixepoch()`)
       .bind(activationCode.id),
+    env.DB.prepare(`UPDATE activation_sessions SET status = 'revoked'
+      WHERE code_id = ? AND status = 'active'
+        AND EXISTS (SELECT 1 FROM activation_codes
+          WHERE id = ? AND reserved_by_user_id = ? AND reserved_until > unixepoch())`)
+      .bind(activationCode.id, activationCode.id, user.id),
     env.DB.prepare(`INSERT INTO activation_sessions (
         id, code_id, owner_user_id, token_hash, status, expires_at
       ) SELECT ?, id, ?, ?, 'active', ? FROM activation_codes
-      WHERE id = ? AND status = 'unused'`).bind(
-      sessionId, user.userId, tokenHash, expiresAt, activationCode.id,
+      WHERE id = ? AND status = 'unused' AND reserved_by_user_id = ?
+        AND reserved_until > unixepoch()`).bind(
+      sessionId, user.id, tokenHash, expiresAt, activationCode.id, user.id,
     ),
   ]);
 
-  if (results[2]?.meta.changes !== 1) {
-    const current = await env.DB.prepare(`SELECT status FROM activation_codes WHERE id = ?`)
-      .bind(activationCode.id).first<{ status: 'unused' | 'used' }>();
+  if (results[3]?.meta.changes !== 1) {
+    const current = await env.DB.prepare(`SELECT status, reserved_by_user_id, reserved_until
+      FROM activation_codes WHERE id = ?`)
+      .bind(activationCode.id).first<CurrentActivationCodeRow>();
+    const now = Math.floor(Date.now() / 1000);
     const error = current?.status === 'used'
       ? 'Bu aktivasyon kodu başka bir cihazda kullanıldı.'
-      : 'Kod şu anda doğrulanamadı. Lütfen tekrar deneyin.';
+      : current?.reserved_by_user_id && current.reserved_by_user_id !== user.id
+        && Number(current.reserved_until ?? 0) > now
+        ? 'Bu aktivasyon kodu başka bir Google hesabında etkinleştirildi.'
+        : 'Kod şu anda doğrulanamadı. Lütfen tekrar deneyin.';
     return NextResponse.json({ error }, { status: 409 });
   }
 

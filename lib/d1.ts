@@ -37,6 +37,22 @@ const schemaStatements = [
     display_name TEXT, role TEXT NOT NULL DEFAULT 'user',
     status TEXT NOT NULL DEFAULT 'active', created_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
+  `CREATE TABLE IF NOT EXISTS user_identities (
+    id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL, provider_subject TEXT NOT NULL, email TEXT NOT NULL COLLATE NOCASE,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()), updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  )`,
+  `CREATE TABLE IF NOT EXISTS user_sessions (
+    id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()), last_seen_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    revoked_at INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS google_login_attempts (
+    state_hash TEXT PRIMARY KEY, nonce_hash TEXT NOT NULL,
+    return_to TEXT NOT NULL CHECK(return_to IN ('/hesap','/olustur')),
+    expires_at INTEGER NOT NULL, used_at INTEGER
+  )`,
   `CREATE TABLE IF NOT EXISTS video_library (
     id TEXT PRIMARY KEY, title TEXT NOT NULL, video_key TEXT NOT NULL UNIQUE,
     content_type TEXT NOT NULL, size_bytes INTEGER NOT NULL CHECK(size_bytes > 0),
@@ -60,7 +76,9 @@ const schemaStatements = [
     status TEXT NOT NULL DEFAULT 'unused' CHECK(status IN ('unused','used')),
     created_at INTEGER NOT NULL DEFAULT (unixepoch()), used_at INTEGER,
     order_reference TEXT, template_id TEXT, invitation_id TEXT UNIQUE,
-    used_by_user_id TEXT REFERENCES app_users(id) ON DELETE SET NULL
+    used_by_user_id TEXT REFERENCES app_users(id) ON DELETE SET NULL,
+    reserved_by_user_id TEXT REFERENCES app_users(id) ON DELETE SET NULL,
+    reserved_until INTEGER
   )`,
   `CREATE TABLE IF NOT EXISTS activation_sessions (
     id TEXT PRIMARY KEY, code_id TEXT NOT NULL REFERENCES activation_codes(id) ON DELETE CASCADE,
@@ -95,9 +113,18 @@ const schemaStatements = [
     updated_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
   'CREATE INDEX IF NOT EXISTS idx_invitations_owner_updated ON invitations(owner_user_id, updated_at DESC)',
+  'CREATE UNIQUE INDEX IF NOT EXISTS idx_user_identities_provider_subject ON user_identities(provider, provider_subject)',
+  'CREATE UNIQUE INDEX IF NOT EXISTS idx_user_identities_provider_email ON user_identities(provider, email COLLATE NOCASE)',
+  'CREATE INDEX IF NOT EXISTS idx_user_identities_user ON user_identities(user_id)',
+  'CREATE INDEX IF NOT EXISTS idx_user_sessions_user_expires ON user_sessions(user_id, expires_at)',
+  'CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at)',
+  'CREATE UNIQUE INDEX IF NOT EXISTS idx_google_login_attempts_nonce ON google_login_attempts(nonce_hash)',
+  'CREATE INDEX IF NOT EXISTS idx_google_login_attempts_expires ON google_login_attempts(expires_at)',
   'CREATE INDEX IF NOT EXISTS idx_invitations_video_library ON invitations(video_library_id)',
   'CREATE INDEX IF NOT EXISTS idx_video_library_status_created ON video_library(status, created_at DESC)',
   'CREATE INDEX IF NOT EXISTS idx_activation_codes_status_created ON activation_codes(status, created_at DESC)',
+  'CREATE UNIQUE INDEX IF NOT EXISTS idx_app_users_email_nocase ON app_users(email COLLATE NOCASE)',
+  'CREATE INDEX IF NOT EXISTS idx_activation_codes_reservation ON activation_codes(reserved_by_user_id, reserved_until)',
   'CREATE UNIQUE INDEX IF NOT EXISTS idx_activation_codes_order_reference ON activation_codes(order_reference)',
   'CREATE INDEX IF NOT EXISTS idx_activation_sessions_code_status ON activation_sessions(code_id, status, expires_at)',
   'CREATE INDEX IF NOT EXISTS idx_activation_sessions_owner_status ON activation_sessions(owner_user_id, status, expires_at)',

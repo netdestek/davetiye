@@ -8,7 +8,7 @@ const playfair = Playfair_Display({ variable: '--font-playfair', subsets: ['lati
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: 'Davetly — Dijital davetiyen, tüm güzel anların',
-  description: 'Hazır videonu yükle, güvenle sakla, WhatsApp üzerinden paylaş ve katılım yanıtlarını tek ekrandan takip et.',
+  description: 'Hazır videonu seç, WhatsApp üzerinden paylaş ve katılım yanıtlarını tek ekrandan takip et.',
   openGraph: {
     title: 'Davetly — Dijital davetiyen, tüm güzel anların',
     description: 'Davetiyeni hazırla. WhatsApp’tan paylaş. Katılımı tek ekrandan takip et.',

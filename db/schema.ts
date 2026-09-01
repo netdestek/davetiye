@@ -8,7 +8,49 @@ export const appUsers = sqliteTable('app_users', {
   role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
   status: text('status', { enum: ['active', 'disabled'] }).notNull().default('active'),
   createdAt: integer('created_at').notNull().default(sql`(unixepoch())`),
-}, (table) => [uniqueIndex('idx_app_users_email').on(table.email)]);
+}, (table) => [
+  uniqueIndex('idx_app_users_email').on(table.email),
+  uniqueIndex('idx_app_users_email_nocase').on(sql`${table.email} COLLATE NOCASE`),
+]);
+
+export const userIdentities = sqliteTable('user_identities', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => appUsers.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(),
+  providerSubject: text('provider_subject').notNull(),
+  email: text('email').notNull(),
+  createdAt: integer('created_at').notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at').notNull().default(sql`(unixepoch())`),
+}, (table) => [
+  uniqueIndex('idx_user_identities_provider_subject').on(table.provider, table.providerSubject),
+  uniqueIndex('idx_user_identities_provider_email').on(table.provider, table.email),
+  index('idx_user_identities_user').on(table.userId),
+]);
+
+export const userSessions = sqliteTable('user_sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => appUsers.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  createdAt: integer('created_at').notNull().default(sql`(unixepoch())`),
+  lastSeenAt: integer('last_seen_at').notNull().default(sql`(unixepoch())`),
+  revokedAt: integer('revoked_at'),
+}, (table) => [
+  uniqueIndex('idx_user_sessions_token_hash').on(table.tokenHash),
+  index('idx_user_sessions_user_expires').on(table.userId, table.expiresAt),
+  index('idx_user_sessions_expires').on(table.expiresAt),
+]);
+
+export const googleLoginAttempts = sqliteTable('google_login_attempts', {
+  stateHash: text('state_hash').primaryKey(),
+  nonceHash: text('nonce_hash').notNull(),
+  returnTo: text('return_to', { enum: ['/hesap', '/olustur'] }).notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  usedAt: integer('used_at'),
+}, (table) => [
+  uniqueIndex('idx_google_login_attempts_nonce').on(table.nonceHash),
+  index('idx_google_login_attempts_expires').on(table.expiresAt),
+]);
 
 export const videoLibrary = sqliteTable('video_library', {
   id: text('id').primaryKey(),
@@ -63,11 +105,14 @@ export const activationCodes = sqliteTable('activation_codes', {
   templateId: text('template_id'),
   invitationId: text('invitation_id'),
   usedByUserId: text('used_by_user_id').references(() => appUsers.id, { onDelete: 'set null' }),
+  reservedByUserId: text('reserved_by_user_id').references(() => appUsers.id, { onDelete: 'set null' }),
+  reservedUntil: integer('reserved_until'),
 }, (table) => [
   uniqueIndex('idx_activation_codes_code_hash').on(table.codeHash),
   uniqueIndex('idx_activation_codes_order_reference').on(table.orderReference),
   uniqueIndex('idx_activation_codes_invitation').on(table.invitationId),
   index('idx_activation_codes_status_created').on(table.status, table.createdAt),
+  index('idx_activation_codes_reservation').on(table.reservedByUserId, table.reservedUntil),
 ]);
 
 export const activationSessions = sqliteTable('activation_sessions', {

@@ -33,6 +33,16 @@
       "bucket_name": "davetly-media"
     }
   ],
+  "ratelimits": [
+    {
+      "name": "AUTH_RATE_LIMITER",
+      "namespace_id": "72738191",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    }
+  ],
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://davetiye.netdestek.net",
     "DAVETLY_ADMIN_EMAILS": "netdestek@gmail.com",
