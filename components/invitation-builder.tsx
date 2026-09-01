@@ -13,6 +13,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  EVENT_TIME_ZONE,
+  normalizeEventDateTime,
+  parseStoredEventDateTime,
+} from '@/lib/event-time';
 
 const steps = [
   { label: 'Bilgiler', icon: CalendarDays },
@@ -209,6 +214,14 @@ export function InvitationBuilder() {
 
   const videoUrl = useMemo(() => videoFile ? URL.createObjectURL(videoFile) : '', [videoFile]);
   const posterUrl = useMemo(() => posterFile ? URL.createObjectURL(posterFile) : '', [posterFile]);
+  const eventPreviewLabel = useMemo(() => {
+    const date = parseStoredEventDateTime(eventAt);
+    return date
+      ? new Intl.DateTimeFormat('tr-TR', {
+          dateStyle: 'long', timeStyle: 'short', timeZone: EVENT_TIME_ZONE,
+        }).format(date)
+      : 'Geçersiz tarih';
+  }, [eventAt]);
 
   useEffect(() => () => {
     if (videoUrl) URL.revokeObjectURL(videoUrl);
@@ -379,7 +392,7 @@ export function InvitationBuilder() {
   function goNext() {
     setPublishError('');
     if (step === 1) {
-      const validDate = eventAt && !Number.isNaN(Date.parse(eventAt));
+      const validDate = Boolean(normalizeEventDateTime(eventAt));
       if (hostNames.trim().length < 2 || hostNames.trim().length > 120 || !validDate ||
           venueName.trim().length < 2 || venueName.trim().length > 160 ||
           venueAddress.trim().length > 300 || description.trim().length > 300) {
@@ -494,7 +507,7 @@ export function InvitationBuilder() {
               {!shareUrl ? (
                 <div className="mt-7 space-y-3">
                   <ReviewRow icon={Users} label="Etkinlik" value={hostNames} />
-                  <ReviewRow icon={CalendarDays} label="Tarih" value={new Date(eventAt).toLocaleString('tr-TR', { dateStyle: 'long', timeStyle: 'short' })} />
+                  <ReviewRow icon={CalendarDays} label="Tarih" value={eventPreviewLabel} />
                   <ReviewRow icon={MapPin} label="Mekân" value={`${venueName} · ${venueAddress}`} />
                   <ReviewRow icon={Film} label="Hazır video" value={`${videoFile?.name ?? 'Video seçilmedi'} · ${videoFile ? formatBytes(videoFile.size) : '—'}`} />
                   {posterFile && <ReviewRow icon={ImageIcon} label="Kapak görseli" value={`${posterFile.name} · ${formatBytes(posterFile.size)}`} />}

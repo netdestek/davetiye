@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { RsvpForm } from '@/components/rsvp-form';
 import { getPublicInvitation } from '@/lib/d1';
+import { EVENT_TIME_ZONE, parseStoredEventDateTime } from '@/lib/event-time';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,10 +28,15 @@ export default async function InvitationPage({ params }: PageProps) {
   const invitation = await getPublicInvitation(slug);
   if (!invitation) notFound();
 
-  const eventDate = new Date(invitation.eventAt);
+  const eventDate = parseStoredEventDateTime(invitation.eventAt);
+  if (!eventDate) notFound();
   const daysLeft = Math.max(0, Math.ceil((eventDate.getTime() - Date.now()) / 86_400_000));
-  const dateLabel = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }).format(eventDate);
-  const timeLabel = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }).format(eventDate);
+  const dateLabel = new Intl.DateTimeFormat('tr-TR', {
+    day: 'numeric', month: 'long', year: 'numeric', weekday: 'long', timeZone: EVENT_TIME_ZONE,
+  }).format(eventDate);
+  const timeLabel = new Intl.DateTimeFormat('tr-TR', {
+    hour: '2-digit', minute: '2-digit', timeZone: EVENT_TIME_ZONE,
+  }).format(eventDate);
 
   return (
     <main className="min-h-screen bg-[#f7f1eb] text-[#332925]">

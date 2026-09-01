@@ -7,6 +7,7 @@ import {
   getActiveActivationSession,
 } from '@/lib/activation-session';
 import { ensureDatabase, hashPublicToken } from '@/lib/d1';
+import { normalizeEventDateTime } from '@/lib/event-time';
 
 type InvitationBody = {
   hostNames?: unknown;
@@ -87,14 +88,14 @@ export async function POST(request: Request) {
   }
 
   const hostNames = textValue(body.hostNames);
-  const eventAt = textValue(body.eventAt);
+  const eventAt = normalizeEventDateTime(textValue(body.eventAt));
   const venueName = textValue(body.venueName);
   const venueAddress = textValue(body.venueAddress);
   const description = textValue(body.description);
   const videoKey = textValue(body.videoKey);
   const posterKey = textValue(body.posterKey);
   if (hostNames.length < 2 || hostNames.length > 120 || !eventAt ||
-      Number.isNaN(Date.parse(eventAt)) || venueName.length < 2 || venueName.length > 160 ||
+      venueName.length < 2 || venueName.length > 160 ||
       venueAddress.length > 300 || description.length > 300) {
     return NextResponse.json({ error: 'Etkinlik adı, tarihi ve mekân bilgilerini kontrol edin.' }, { status: 422 });
   }
