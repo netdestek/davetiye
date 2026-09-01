@@ -283,13 +283,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Yükleme parçaları eksik veya sırasız.' }, { status: 422 });
     }
 
-    let object: R2Object;
+    let completedObject: R2Object;
     try {
       const upload = env.FILES.resumeMultipartUpload(body.key, body.uploadId);
-      object = await upload.complete(sortedParts);
+      completedObject = await upload.complete(sortedParts);
     } catch {
       return NextResponse.json({ error: 'Yükleme tamamlanamadı; lütfen yeniden deneyin.' }, { status: 409 });
     }
+
+    // The object is strongly consistent after multipart completion. Re-read it
+    // from R2 so validation uses the persisted HTTP/custom metadata rather than
+    // relying on the sometimes sparse object returned by complete().
+    let object: R2Object | null;
+    try {
+      object = await env.FILES.head(body.key);
+    } catch {
+      object = null;
+    }
+    if (!object) {
+      await env.FILES.delete(body.key).catch(() => undefined);
+      await markUpload(body.uploadId, user.userId, 'failed');
+      return NextResponse.json({ error: 'Yüklenen dosya R2 üzerinde doğrulanamadı.' }, { status: 503 });
+    }
+
     const metadata = object.customMetadata;
     const kind = metadata?.mediaKind;
     const declaredSize = Number(metadata?.declaredSize ?? 0);
@@ -302,6 +318,14 @@ export async function POST(request: Request) {
         sortedParts.length !== session.expected_parts || !RULES[kind]?.types.has(contentType)) {
       await env.FILES.delete(body.key);
       await markUpload(body.uploadId, user.userId, 'failed');
+      console.warn('R2 object metadata validation failed', {
+        hasCustomMetadata: Boolean(metadata),
+        ownerMatches: metadata?.ownerUserId === user.userId,
+        kindMatches: kind === session.kind,
+        contentTypeMatches: contentType === session.content_type,
+        sizeMatches: object.size === session.expected_size,
+        completedKeyMatches: completedObject.key === body.key,
+      });
       return NextResponse.json({ error: 'Yüklenen dosya doğrulanamadı.' }, { status: 422 });
     }
 
