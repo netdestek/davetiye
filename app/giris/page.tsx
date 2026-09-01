@@ -127,7 +127,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <span className="liquid-icon liquid-icon--on-dark size-12 rounded-2xl">
             <Sparkles className="size-5 text-[#efc9ba]" />
           </span>
-          <blockquote className="mt-8 font-heading text-[38px] font-medium italic leading-[1.25] tracking-[-0.035em]">
+          <blockquote className="mt-8 font-heading text-[38px] font-medium leading-[1.2] tracking-[-0.04em]">
             “En güzel gününüzü, size ait küçük bir hikâyeye dönüştürün.”
           </blockquote>
           <div className="mt-10 space-y-4 text-sm text-white/75">

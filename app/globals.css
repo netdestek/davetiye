@@ -7,8 +7,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-dm-sans);
-  --font-heading: var(--font-playfair);
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', sans-serif;
+  --font-heading:
+    -apple-system, BlinkMacSystemFont, var(--font-inter-tight),
+    var(--font-inter), 'Segoe UI', sans-serif;
+  --font-invitation: var(--font-playfair), 'Times New Roman', serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -117,18 +121,42 @@
 }
 
 @layer base {
-  * { @apply border-border outline-ring/50; }
-  html { @apply font-sans; }
-  body { @apply bg-background text-foreground; }
-  button, a { -webkit-tap-highlight-color: transparent; }
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-kerning: normal;
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+  }
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @layer components {
-  .nav-link { @apply flex h-11 items-center gap-3 rounded-xl px-3 text-[14px] font-medium text-[#756b68] transition-colors hover:bg-[#f8f3ef] hover:text-foreground; }
-  .nav-link svg { @apply size-[18px]; stroke-width: 1.8; }
-  .mobile-nav { @apply flex min-h-12 flex-col items-center justify-center gap-1 text-[10px] font-medium text-[#8c817d]; }
-  .mobile-nav svg { @apply size-[18px]; stroke-width: 1.8; }
-  .invitation-preview { background: linear-gradient(145deg, #6e3041 0%, #3b393d 57%, #213b37 100%); }
+  .nav-link {
+    @apply flex h-11 items-center gap-3 rounded-xl px-3 text-[14px] font-medium text-[#756b68] transition-colors hover:bg-[#f8f3ef] hover:text-foreground;
+  }
+  .nav-link svg {
+    @apply size-[18px];
+    stroke-width: 1.8;
+  }
+  .mobile-nav {
+    @apply flex min-h-12 flex-col items-center justify-center gap-1 text-[10px] font-medium text-[#8c817d];
+  }
+  .mobile-nav svg {
+    @apply size-[18px];
+    stroke-width: 1.8;
+  }
+  .invitation-preview {
+    background: linear-gradient(145deg, #6e3041 0%, #3b393d 57%, #213b37 100%);
+  }
 
   .liquid-icon,
   .liquid-icon-button {
@@ -143,8 +171,17 @@
     border: 1px solid rgb(255 255 255 / 82%);
     color: var(--liquid-ink);
     background:
-      radial-gradient(85% 72% at 22% 8%, rgb(255 255 255 / 96%) 0%, rgb(255 255 255 / 42%) 48%, transparent 76%),
-      linear-gradient(145deg, rgb(255 255 255 / 72%), rgb(var(--liquid-tint) / 24%));
+      radial-gradient(
+        85% 72% at 22% 8%,
+        rgb(255 255 255 / 96%) 0%,
+        rgb(255 255 255 / 42%) 48%,
+        transparent 76%
+      ),
+      linear-gradient(
+        145deg,
+        rgb(255 255 255 / 72%),
+        rgb(var(--liquid-tint) / 24%)
+      );
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 94%),
       inset 0 -1px 0 rgb(var(--liquid-tint) / 12%),
@@ -162,8 +199,13 @@
     inset: -54% 30% 38% -30%;
     transform: rotate(24deg);
     border-radius: 999px;
-    background: linear-gradient(110deg, transparent 15%, rgb(255 255 255 / 80%) 52%, transparent 78%);
-    opacity: .82;
+    background: linear-gradient(
+      110deg,
+      transparent 15%,
+      rgb(255 255 255 / 80%) 52%,
+      transparent 78%
+    );
+    opacity: 0.82;
     pointer-events: none;
   }
 
@@ -192,7 +234,11 @@
     --liquid-shadow: 98 31 48;
     border-color: rgb(255 255 255 / 46%);
     background:
-      radial-gradient(90% 72% at 20% 5%, rgb(255 255 255 / 38%) 0%, transparent 58%),
+      radial-gradient(
+        90% 72% at 20% 5%,
+        rgb(255 255 255 / 38%) 0%,
+        transparent 58%
+      ),
       linear-gradient(145deg, rgb(174 78 98 / 96%), rgb(105 37 55 / 94%));
   }
 
@@ -214,7 +260,11 @@
     --liquid-shadow: 28 87 67;
     border-color: rgb(255 255 255 / 48%);
     background:
-      radial-gradient(90% 72% at 20% 5%, rgb(255 255 255 / 38%) 0%, transparent 58%),
+      radial-gradient(
+        90% 72% at 20% 5%,
+        rgb(255 255 255 / 38%) 0%,
+        transparent 58%
+      ),
       linear-gradient(145deg, rgb(62 139 113 / 94%), rgb(34 94 76 / 96%));
   }
 
@@ -248,7 +298,11 @@
     --liquid-shadow: 0 0 0;
     border-color: rgb(255 255 255 / 32%);
     background:
-      radial-gradient(80% 68% at 22% 8%, rgb(255 255 255 / 34%) 0%, transparent 64%),
+      radial-gradient(
+        80% 68% at 22% 8%,
+        rgb(255 255 255 / 34%) 0%,
+        transparent 64%
+      ),
       linear-gradient(145deg, rgb(255 255 255 / 18%), rgb(255 255 255 / 6%));
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 46%),
@@ -257,7 +311,10 @@
   }
 
   .liquid-icon-button {
-    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease;
   }
 
   .liquid-icon--static {
@@ -276,7 +333,9 @@
     }
   }
 
-  .liquid-icon-button:active { transform: scale(.96); }
+  .liquid-icon-button:active {
+    transform: scale(0.96);
+  }
   .liquid-icon-button:focus-visible {
     outline: 3px solid rgb(var(--liquid-tint) / 68%);
     outline-offset: 3px;
@@ -284,9 +343,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .liquid-icon-button { transition: none; }
+  .liquid-icon-button {
+    transition: none;
+  }
   .liquid-icon-button:hover,
-  .liquid-icon-button:active { transform: none; }
+  .liquid-icon-button:active {
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -300,11 +363,19 @@
   .liquid-icon::before,
   .liquid-icon::after,
   .liquid-icon-button::before,
-  .liquid-icon-button::after { display: none; }
+  .liquid-icon-button::after {
+    display: none;
+  }
 
-  .liquid-icon--brand { background: #873448; }
-  .liquid-icon--sage-strong { background: #2f725e; }
-  .liquid-icon--on-dark { background: #425d56; }
+  .liquid-icon--brand {
+    background: #873448;
+  }
+  .liquid-icon--sage-strong {
+    background: #2f725e;
+  }
+  .liquid-icon--on-dark {
+    background: #425d56;
+  }
 }
 
 @media (prefers-contrast: more) {
@@ -329,9 +400,15 @@
   .liquid-icon::before,
   .liquid-icon::after,
   .liquid-icon-button::before,
-  .liquid-icon-button::after { display: none; }
+  .liquid-icon-button::after {
+    display: none;
+  }
 
-  .liquid-icon-button:focus-visible { outline: 2px solid Highlight; }
+  .liquid-icon-button:focus-visible {
+    outline: 2px solid Highlight;
+  }
 }
 
-::selection { background: color-mix(in oklch, var(--primary) 22%, transparent); }
+::selection {
+  background: color-mix(in oklch, var(--primary) 22%, transparent);
+}
