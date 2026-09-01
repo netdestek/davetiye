@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { env } from 'cloudflare:workers';
 
-import { getChatGPTUser } from '@/app/chatgpt-auth';
 import {
   createActivationToken,
   hashActivationCode,
@@ -61,10 +60,9 @@ export async function POST(request: Request) {
   }
 
   await ensureDatabase();
-  // PDF alıcısının ayrıca uygulamaya giriş yapması gerekmez. Oturum açmışsa
-  // mevcut hesabına, değilse yalnızca bu aktivasyon için geçici bir kullanıcıya
-  // bağlanır. Asıl yetki her zaman HttpOnly aktivasyon çerezindedir.
-  const user = (await getChatGPTUser()) ?? guestOwner();
+  // PDF alıcısının ayrıca uygulamaya giriş yapması gerekmez. Yetki yalnızca
+  // kısa ömürlü, HttpOnly aktivasyon çerezine bağlanan geçici hesaptan gelir.
+  const user = guestOwner();
 
   const codeHash = await hashActivationCode(code);
   const activationCode = await env.DB.prepare(`SELECT id, status, template_id FROM activation_codes

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { env } from 'cloudflare:workers';
 
-import { ensureConfiguredAdmin, getChatGPTUser } from '@/app/chatgpt-auth';
+import { ensureConfiguredAdmin, getAccessUser } from '@/app/cloudflare-access-auth';
 import { createActivationCode, hashActivationCode } from '@/lib/activation-codes';
 import { ensureDatabase } from '@/lib/d1';
 
@@ -21,9 +21,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'İstek kaynağı doğrulanamadı.' }, { status: 403 });
   }
 
-  const user = await getChatGPTUser();
-  if (!user) return NextResponse.json({ error: 'Giriş yapmalısınız.' }, { status: 401 });
-  if (!(await ensureConfiguredAdmin(user))) {
+  const accessUser = await getAccessUser();
+  if (!accessUser) {
+    return NextResponse.json({ error: 'Cloudflare Access oturumu doğrulanamadı.' }, { status: 401 });
+  }
+  const user = await ensureConfiguredAdmin(accessUser);
+  if (!user) {
     return NextResponse.json({ error: 'Aktivasyon kodu oluşturma yetkiniz yok.' }, { status: 403 });
   }
 

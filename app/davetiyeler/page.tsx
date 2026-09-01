@@ -1,8 +1,9 @@
 import {
   ArrowLeft, CalendarDays, Check, Clock3, Heart, HelpCircle, LayoutDashboard,
-  MapPin, MoreHorizontal, Plus, Search, Settings, UserRound, Users, X,
+  MapPin, MoreHorizontal, Plus, Search, Settings, Users, X,
 } from 'lucide-react';
 
+import { requireConfiguredAdmin } from '@/app/cloudflare-access-auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ShareActions } from '@/components/share-actions';
@@ -18,6 +19,7 @@ const statusPresentation = {
 };
 
 export default async function InvitationsPage() {
+  await requireConfiguredAdmin();
   const [metrics, guests] = await Promise.all([
     getInvitationMetrics('demo-wedding'),
     getGuestResponses('demo-wedding'),

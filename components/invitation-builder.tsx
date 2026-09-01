@@ -188,15 +188,7 @@ async function uploadFile(
   }
 }
 
-export function InvitationBuilder({
-  isSignedIn,
-  displayName,
-  signInPath,
-}: {
-  isSignedIn: boolean;
-  displayName: string | null;
-  signInPath: string;
-}) {
+export function InvitationBuilder() {
   const [step, setStep] = useState(1);
   const [hostNames, setHostNames] = useState('Elif & Arda');
   const [eventAt, setEventAt] = useState('2026-09-12T19:30');
@@ -413,11 +405,6 @@ export function InvitationBuilder({
         <p className="ml-5 hidden text-sm font-medium text-[#665b57] sm:block">Yeni davetiye</p>
         <div className="ml-auto flex items-center gap-3">
           {activationApproved && <Badge variant="secondary" className="hidden bg-[#e4f0eb] text-[#2a6657] sm:inline-flex"><ShieldCheck className="size-3" /> Kod onaylandı</Badge>}
-          {isSignedIn ? (
-            <Badge variant="secondary" className="bg-[#e4f0eb] text-[#2a6657]"><Check className="size-3" /> {displayName?.split(' ')[0] ?? 'Oturum açık'}</Badge>
-          ) : (
-            <a href={signInPath} target="_top" className="text-xs font-semibold text-primary">Giriş yap</a>
-          )}
           <Link href="/" className={buttonVariants({ variant: 'outline', className: 'hidden h-9 sm:inline-flex' })}><ArrowLeft /> Panele dön</Link>
         </div>
       </header>

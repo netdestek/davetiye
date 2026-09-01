@@ -103,8 +103,8 @@ export default function HomePage() {
               <h1 className="font-heading text-[31px] font-semibold leading-tight tracking-[-0.035em] sm:text-[38px]">Hoş geldin, Elif <span aria-hidden="true">👋</span></h1>
               <p className="mt-2 text-[14px] text-muted-foreground">Davetinin son durumuna birlikte bakalım.</p>
             </div>
-            <a href="/davet/ahmet-zeynep-x7p92k" className="group inline-flex items-center gap-2 text-sm font-semibold text-primary">
-              Davetli sayfasını görüntüle <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            <a href="/olustur" className="group inline-flex items-center gap-2 text-sm font-semibold text-primary">
+              Yeni davetiye oluştur <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </a>
           </div>
 
@@ -161,7 +161,7 @@ export default function HomePage() {
                     </div>
                     <div className="mt-auto flex flex-wrap gap-2 pt-6">
                       <Button nativeButton={false} render={<a href="/davetiyeler" />} className="h-9 px-3.5">Davetiyeyi yönet</Button>
-                      <Button nativeButton={false} render={<a href="/davet/ahmet-zeynep-x7p92k" />} variant="outline" className="h-9 px-3.5">Ön izleme</Button>
+                      <Button nativeButton={false} render={<a href="/olustur" />} variant="outline" className="h-9 px-3.5">Davetiye oluştur</Button>
                     </div>
                   </div>
                 </div>

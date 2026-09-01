@@ -127,7 +127,7 @@ export async function ensureDatabase() {
   if (!db) throw new Error('D1 veritabanı bağlantısı bulunamadı.');
   await db.batch(schemaStatements.map((statement) => db.prepare(statement)));
   await ensureActivationSchema(db);
-  await seedDemoInvitation();
+  if (env.DAVETLY_ENABLE_DEMO === 'true') await seedDemoInvitation();
   schemaReady = true;
 }
 

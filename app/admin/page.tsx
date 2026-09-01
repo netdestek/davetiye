@@ -8,7 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ActivationCodeIssuer } from '@/components/activation-code-issuer';
-import { requireConfiguredAdmin } from '@/app/chatgpt-auth';
+import { requireConfiguredAdmin } from '@/app/cloudflare-access-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +36,7 @@ const nav = [
 ];
 
 export default async function AdminPage() {
-  await requireConfiguredAdmin('/admin');
+  await requireConfiguredAdmin();
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] text-[#25282b] lg:pl-[238px]">
